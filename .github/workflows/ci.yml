@@ -374,7 +374,7 @@ jobs:
         #era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras) }}
         cardano_node_version: ["9.0.0", "9.1.0", "9.1.1", "9.2.0", "9.2.1"]
         hard_fork_latest_era_at_epoch: [0]
-        run_id: ["#1"]
+        run_id: ["#1", "#2"]
         extra_args: [""]
 
         include:
@@ -420,6 +420,7 @@ jobs:
             --mithril-era=${{ matrix.era }} \
             --cardano-node-version ${{ matrix.cardano_node_version }} \
             --cardano-hard-fork-latest-era-at-epoch ${{ matrix.hard_fork_latest_era_at_epoch }} ${{ matrix.extra_args }}
+            --cardano-slot-length 0.20
 
   # send-tests-results:
   #   if: success() || failure()
