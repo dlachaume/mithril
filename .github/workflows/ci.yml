@@ -598,6 +598,28 @@ jobs:
           title: Unstable Development Builds
           files: package/*
 
+      - name: Delete unstable release and associated tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if gh release view unstable -R ${{ github.repository }} &>/dev/null; then
+            gh release delete unstable --cleanup-tag -y -R ${{ github.repository }}
+          else
+            echo "Release 'unstable' not found, skipping deletion."
+          fi
+
+      - name: Update unstable release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: unstable
+          prerelease: true
+          name: Unstable Development Builds
+          files: package/*
+
+      # We use a separate action to update the body of the release note.
+      # The 'softprops/action-gh-release' action prepends the customized part to the generated note,
+      # which is not the desired behavior
       - name: Update unstable release body with release notes addon
         # specific version since this action does not support giving only the major number
         uses: tubone24/update_release@v1.3.1
