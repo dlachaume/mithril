@@ -589,15 +589,6 @@ jobs:
           gpg-secret-key: ${{ secrets.GPG_SECRET_KEY }}
           compatibility-table: '{ "release-mainnet": "⛔", "release-preprod": "⛔", "pre-release-preview": "⛔", "testing-preview": "✔", "testing-sanchonet": "✔" }'
 
-      - name: Update unstable release
-        uses: marvinpinto/action-automatic-releases@latest
-        with:
-          repo_token: ${{ secrets.GITHUB_TOKEN }}
-          automatic_release_tag: unstable
-          prerelease: true
-          title: Unstable Development Builds
-          files: package/*
-
       - name: Delete unstable release and associated tag
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -616,6 +607,7 @@ jobs:
           prerelease: true
           name: Unstable Development Builds
           files: package/*
+          generate_release_notes: true
 
       # We use a separate action to update the body of the release note.
       # The 'softprops/action-gh-release' action prepends the customized part to the generated note,
