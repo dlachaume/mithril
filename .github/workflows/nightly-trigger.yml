@@ -20,10 +20,13 @@ jobs:
     needs: [docker-builds, backward-compatibility]
     if: failure()
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Send email with SendGrid
         uses: peter-evans/sendgrid-action@v1
         env:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           SCRIPT_FILEPATH: ./.github/workflows/scripts/notify-nightly-failure.js
-          SENDGRID_MAIL_FROM: ${{ secrets.SENDGRID_MAIL_FROM }}
-          SENDGRID_MAIL_TO: ${{ secrets.SENDGRID_MAIL_TO }}
+          SENDGRID_MAIL_FROM: ${{ vars.SENDGRID_MAIL_FROM }}
+          SENDGRID_MAIL_TO: ${{ vars.SENDGRID_MAIL_TO }}
