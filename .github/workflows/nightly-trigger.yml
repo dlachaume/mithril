@@ -5,7 +5,8 @@ on:
   # Notifications for scheduled workflows are sent to the user who last modified the cron syntax in the workflow file.
   schedule:
     - cron: "0 2 * * *"
-    - cron: "40 11 * * *"
+    - cron: "25 14 * * *"
+    - cron: "45 14 * * *"
 
 jobs:
   docker-builds:
@@ -19,17 +20,10 @@ jobs:
     needs: [docker-builds, backward-compatibility]
     if: failure()
     steps:
-      - name: Send Failure Email
-        shell: bash
-        run: |
-          curl -s --user "api:${{ secrets.MAILGUN_API_KEY }}" \
-            https://api.mailgun.net/v3/${{ secrets.MAILGUN_DOMAIN }}/messages \
-            -F from="GitHub Actions <noreply@${{ secrets.MAILGUN_DOMAIN }}>" \
-            -F to="${{ secrets.MAILGUN_TO }}" \
-            -F subject="🚨 Nightly Workflow Failed" \
-            -F text="**Nightly Trigger** failed, details:
-
-            - **Workflow**: ${{ github.workflow }}
-            - **Repository**: ${{ github.repository }}
-            - **Run Number**: #${{ github.run_number }}
-            - [Verify logs](${{ github.run_url }})"
+      - name: Send email with SendGrid
+        uses: peter-evans/sendgrid-action@v1
+        env:
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          SCRIPT_FILEPATH: ./.github/workflows/scripts/notify-nightly-failure.js
+          SENDGRID_MAIL_FROM: ${{ secrets.SENDGRID_MAIL_FROM }}
+          SENDGRID_MAIL_TO: ${{ secrets.SENDGRID_MAIL_TO }}
