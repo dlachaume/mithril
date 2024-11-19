@@ -5,8 +5,8 @@ on:
   # Notifications for scheduled workflows are sent to the user who last modified the cron syntax in the workflow file.
   schedule:
     - cron: "0 2 * * *"
-    - cron: "20 15 * * *"
-    - cron: "30 15 * * *"
+    - cron: "37 15 * * *"
+    - cron: "47 15 * * *"
 
 jobs:
   docker-builds:
@@ -22,6 +22,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Make script executable
+        shell: bash
+        run: |
+          chmod +x ./.github/workflows/scripts/notify-nightly-failure.js
 
       - name: Send email with SendGrid
         uses: peter-evans/sendgrid-action@v1
