@@ -28,6 +28,12 @@ jobs:
       cardano_node_version: ${{ steps.set-env.outputs.cardano_node_version }}
       signed-entity-types: ${{ steps.set-env.outputs.signed-entity-types }}
     steps:
+      - name: Simulating error
+        shell: bash
+        run: |
+          echo "Simulating failure..."
+          exit 1
+
       - name: Prepare env variables
         id: set-env
         shell: bash

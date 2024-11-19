@@ -23,6 +23,12 @@ jobs:
       CONTEXT: .
 
     steps:
+      - name: Simulating error
+        shell: bash
+        run: |
+          echo "Simulating failure..."
+          exit 1
+
       - name: Checkout
         uses: actions/checkout@v4
 
