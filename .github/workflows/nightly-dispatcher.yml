@@ -5,9 +5,7 @@ on:
   # Notifications for scheduled workflows are sent to the user who last modified the cron syntax in the workflow file.
   schedule:
     - cron: "0 2 * * *"
-    - cron: "50 9 * * *"
-    - cron: "30 10 * * *"
-    - cron: "40 10 * * *"
+    - cron: "0 11 * * *"
 
 jobs:
   docker-builds:
