@@ -184,7 +184,7 @@ jobs:
             # including node.sock makes the upload fails so exclude them:
             !./artifacts/**/node.sock
             # exclude cardano tools, saving ~500mb of data:
-            !./devnet/bin/**
+            !./devnet/bin/
           if-no-files-found: error
 
   summarize-test-results:
