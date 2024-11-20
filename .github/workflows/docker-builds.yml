@@ -23,6 +23,9 @@ jobs:
       CONTEXT: .
 
     steps:
+      - name: Simulating error
+        run: exit 1
+
       - name: Checkout
         uses: actions/checkout@v4
 
