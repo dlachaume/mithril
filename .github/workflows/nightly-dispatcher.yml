@@ -1,23 +1,21 @@
-name: Nightly Trigger
+name: Nightly Dispatcher
 
 on:
   # Important note about scheduled workflows:
   # Notifications for scheduled workflows are sent to the user who last modified the cron syntax in the workflow file.
   schedule:
     - cron: "0 2 * * *"
-    - cron: "37 15 * * *"
-    - cron: "47 15 * * *"
 
 jobs:
   docker-builds:
-    uses: ./.github/workflows/nightly-docker-builds.yml
+    uses: ./.github/workflows/docker-builds.yml
 
   backward-compatibility:
-    uses: ./.github/workflows/nightly-backward-compatibility.yml
+    uses: ./.github/workflows/backward-compatibility.yml
 
   notify-on-failure:
     runs-on: ubuntu-22.04
-    needs: [docker-builds, backward-compatibility]
+    needs: [docker-builds]
     if: failure()
     steps:
       - name: Checkout repository
@@ -28,10 +26,10 @@ jobs:
         run: |
           chmod +x ./.github/workflows/scripts/notify-nightly-failure.js
 
-      - name: Send email with SendGrid
+      - name: Send failure notification by email
         uses: peter-evans/sendgrid-action@v1
         env:
           SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
           SCRIPT_FILEPATH: ./.github/workflows/scripts/notify-nightly-failure.js
-          SENDGRID_MAIL_FROM: ${{ vars.SENDGRID_MAIL_FROM }}
-          SENDGRID_MAIL_TO: ${{ vars.SENDGRID_MAIL_TO }}
+          SENDGRID_MAIL_FROM: ${{ secrets.CI_NOTIFICATION_EMAIL_FROM }}
+          SENDGRID_MAIL_TO: ${{ secrets.CI_NOTIFICATION_EMAIL_TO }}

@@ -1,4 +1,4 @@
-name: Nightly backward compatibility
+name: Backward compatibility
 
 on:
   workflow_call:
@@ -28,12 +28,6 @@ jobs:
       cardano_node_version: ${{ steps.set-env.outputs.cardano_node_version }}
       signed-entity-types: ${{ steps.set-env.outputs.signed-entity-types }}
     steps:
-      - name: Simulating error
-        shell: bash
-        run: |
-          echo "Simulating failure..."
-          exit 1
-
       - name: Prepare env variables
         id: set-env
         shell: bash
@@ -189,9 +183,8 @@ jobs:
             ./artifacts/*
             # including node.sock makes the upload fails so exclude them:
             !./artifacts/**/node.sock
-            # exclude cardano tools, saving ~50mb of data:
-            !./artifacts/devnet/cardano-cli
-            !./artifacts/devnet/cardano-node
+            # exclude cardano tools, saving ~500mb of data:
+            !./devnet/bin/*
           if-no-files-found: error
 
   summarize-test-results:
