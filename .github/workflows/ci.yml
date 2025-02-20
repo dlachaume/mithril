@@ -15,6 +15,63 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build-ubuntu-ARM-64:
+    runs-on: ubuntu-22.04-arm
+    outputs:
+      eras: ${{ steps.eras-test-lab.outputs.eras }}
+    steps:
+      - name: Checkout sources
+        uses: actions/checkout@v4
+
+      - name: Install stable toolchain, tools, and restore cache
+        uses: ./.github/workflows/actions/toolchain-and-cache
+        with:
+          cache-version: 22.04-${{ secrets.CACHE_VERSION }}
+          cargo-tools: cargo-deb
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      # We separate the build in 2 steps as we want to avoid side effects with Rust feature unification.
+      - name: Cargo build - Tooling
+        shell: bash
+        run: cargo build --release --bin mithril-end-to-end --bin load-aggregator --features bundle_tls
+
+      - name: Build Mithril workspace & publish artifacts
+        uses: ./.github/workflows/actions/build-upload-mithril-artifact
+        with:
+          binaries-build-args: --bin mithril-aggregator --bin mithril-signer --bin mithril-client --bin mithril-relay --features bundle_tls,full
+          libraries-build-args: --package mithril-stm --package mithril-client --features full,unstable
+
+      - name: Build Debian packages
+        shell: bash
+        run: |
+          cargo deb --no-build --package mithril-aggregator
+          cargo deb --no-build --package mithril-signer
+          cargo deb --no-build --package mithril-client-cli
+          cargo deb --no-build --package mithril-relay
+
+      - name: Publish Debian packages
+        uses: actions/upload-artifact@v4
+        with:
+          name: mithril-deb-packages-${{ runner.os }}-${{ runner.arch }}
+          path: target/debian/*.deb
+          if-no-files-found: error
+
+      - name: Publish End-to-end runner (${{ runner.os }}-${{ runner.arch }})
+        uses: actions/upload-artifact@v4
+        with:
+          name: mithril-tooling-${{ runner.os }}-${{ runner.arch }}
+          path: |
+            target/release/mithril-end-to-end
+            target/release/load-aggregator
+          if-no-files-found: error
+
+      - name: Prepare test lab eras
+        id: eras-test-lab
+        run: |
+          ERAS=$(./target/release/mithril-aggregator era list --json)
+          echo "Test Lab Eras: $ERAS"
+          echo "eras=$ERAS" >> $GITHUB_OUTPUT
+
   build-ubuntu-X64:
     runs-on: ubuntu-22.04
     outputs:
