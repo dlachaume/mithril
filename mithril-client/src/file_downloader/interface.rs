@@ -1,5 +1,6 @@
 use std::{collections::HashMap, path::Path};
 
+use anyhow::anyhow;
 use async_trait::async_trait;
 
 use mithril_common::{
@@ -7,7 +8,7 @@ use mithril_common::{
         AncillaryLocation, CompressionAlgorithm, DigestLocation, FileUri, ImmutableFileNumber,
         ImmutablesLocation,
     },
-    StdResult,
+    StdError, StdResult,
 };
 
 use crate::feedback::{MithrilEvent, MithrilEventCardanoDatabase};
@@ -44,6 +45,9 @@ impl FileDownloaderUri {
 
                 Ok(immutable_files_range.zip(file_downloader_uris).collect())
             }
+            ImmutablesLocation::Unknown => {
+                Err(anyhow!("Unknown location type to download immutable"))
+            }
         }
     }
 
@@ -67,20 +71,28 @@ impl From<FileUri> for FileDownloaderUri {
     }
 }
 
-impl From<AncillaryLocation> for FileDownloaderUri {
-    fn from(digest_location: AncillaryLocation) -> Self {
-        match digest_location {
-            AncillaryLocation::CloudStorage { uri } => Self::FileUri(FileUri(uri)),
+impl TryFrom<AncillaryLocation> for FileDownloaderUri {
+    type Error = StdError;
+
+    fn try_from(location: AncillaryLocation) -> Result<Self, Self::Error> {
+        match location {
+            AncillaryLocation::CloudStorage { uri } => Ok(Self::FileUri(FileUri(uri))),
+            AncillaryLocation::Unknown => {
+                Err(anyhow!("Unknown location type to download ancillary"))
+            }
         }
     }
 }
 
-impl From<DigestLocation> for FileDownloaderUri {
-    fn from(digest_location: DigestLocation) -> Self {
-        match digest_location {
+impl TryFrom<DigestLocation> for FileDownloaderUri {
+    type Error = StdError;
+
+    fn try_from(location: DigestLocation) -> Result<Self, Self::Error> {
+        match location {
             DigestLocation::CloudStorage { uri } | DigestLocation::Aggregator { uri } => {
-                Self::FileUri(FileUri(uri))
+                Ok(Self::FileUri(FileUri(uri)))
             }
+            DigestLocation::Unknown => Err(anyhow!("Unknown location type to download digest")),
         }
     }
 }
@@ -112,6 +124,8 @@ pub enum DownloadEvent {
     Full {
         /// Unique download identifier
         download_id: String,
+        /// Digest of the downloaded snapshot
+        digest: String,
     },
 }
 
@@ -119,13 +133,46 @@ impl DownloadEvent {
     /// Get the unique download identifier
     pub fn download_id(&self) -> &str {
         match self {
-            DownloadEvent::Immutable {
-                immutable_file_number: _,
-                download_id,
-            } => download_id,
-            DownloadEvent::Ancillary { download_id }
+            DownloadEvent::Immutable { download_id, .. }
+            | DownloadEvent::Ancillary { download_id }
             | DownloadEvent::Digest { download_id }
-            | DownloadEvent::Full { download_id } => download_id,
+            | DownloadEvent::Full { download_id, .. } => download_id,
+        }
+    }
+
+    /// Build a download started event
+    pub fn build_download_started_event(&self, size: u64) -> MithrilEvent {
+        match self {
+            DownloadEvent::Immutable {
+                download_id,
+                immutable_file_number,
+            } => MithrilEvent::CardanoDatabase(
+                MithrilEventCardanoDatabase::ImmutableDownloadStarted {
+                    download_id: download_id.to_string(),
+                    immutable_file_number: *immutable_file_number,
+                    size,
+                },
+            ),
+            DownloadEvent::Ancillary { download_id } => MithrilEvent::CardanoDatabase(
+                MithrilEventCardanoDatabase::AncillaryDownloadStarted {
+                    download_id: download_id.to_string(),
+                    size,
+                },
+            ),
+            DownloadEvent::Digest { download_id } => {
+                MithrilEvent::CardanoDatabase(MithrilEventCardanoDatabase::DigestDownloadStarted {
+                    download_id: download_id.to_string(),
+                    size,
+                })
+            }
+            DownloadEvent::Full {
+                download_id,
+                digest,
+            } => MithrilEvent::SnapshotDownloadStarted {
+                download_id: download_id.to_string(),
+                digest: digest.to_string(),
+                size,
+            },
         }
     }
 
@@ -161,10 +208,38 @@ impl DownloadEvent {
                     size: total_bytes,
                 })
             }
-            DownloadEvent::Full { download_id } => MithrilEvent::SnapshotDownloadProgress {
+            DownloadEvent::Full { download_id, .. } => MithrilEvent::SnapshotDownloadProgress {
                 download_id: download_id.to_string(),
                 downloaded_bytes,
                 size: total_bytes,
+            },
+        }
+    }
+
+    /// Build a download completed event
+    pub fn build_download_completed_event(&self) -> MithrilEvent {
+        match self {
+            DownloadEvent::Immutable {
+                download_id,
+                immutable_file_number,
+            } => MithrilEvent::CardanoDatabase(
+                MithrilEventCardanoDatabase::ImmutableDownloadCompleted {
+                    download_id: download_id.to_string(),
+                    immutable_file_number: *immutable_file_number,
+                },
+            ),
+            DownloadEvent::Ancillary { download_id } => MithrilEvent::CardanoDatabase(
+                MithrilEventCardanoDatabase::AncillaryDownloadCompleted {
+                    download_id: download_id.to_string(),
+                },
+            ),
+            DownloadEvent::Digest { download_id } => MithrilEvent::CardanoDatabase(
+                MithrilEventCardanoDatabase::DigestDownloadCompleted {
+                    download_id: download_id.to_string(),
+                },
+            ),
+            DownloadEvent::Full { download_id, .. } => MithrilEvent::SnapshotDownloadCompleted {
+                download_id: download_id.to_string(),
             },
         }
     }
@@ -227,7 +302,74 @@ mod tests {
     }
 
     #[test]
-    fn download_event_type_builds_correct_event() {
+    fn immutable_files_location_to_file_downloader_uris_return_error_when_location_is_unknown() {
+        let immutable_files_location = ImmutablesLocation::Unknown;
+        let immutable_files_range: Vec<ImmutableFileNumber> = (1..=1).collect();
+
+        FileDownloaderUri::expand_immutable_files_location_to_file_downloader_uris(
+            &immutable_files_location,
+            &immutable_files_range,
+        )
+        .expect_err("expand_immutable_files_location_to_file_downloader_uris should fail");
+    }
+
+    #[test]
+    fn download_event_type_builds_started_event() {
+        let download_event_type = DownloadEvent::Immutable {
+            download_id: "download-123".to_string(),
+            immutable_file_number: 123,
+        };
+        let event = download_event_type.build_download_started_event(1234);
+        assert_eq!(
+            MithrilEvent::CardanoDatabase(MithrilEventCardanoDatabase::ImmutableDownloadStarted {
+                immutable_file_number: 123,
+                download_id: "download-123".to_string(),
+                size: 1234,
+            }),
+            event,
+        );
+
+        let download_event_type = DownloadEvent::Ancillary {
+            download_id: "download-123".to_string(),
+        };
+        let event = download_event_type.build_download_started_event(1234);
+        assert_eq!(
+            MithrilEvent::CardanoDatabase(MithrilEventCardanoDatabase::AncillaryDownloadStarted {
+                download_id: "download-123".to_string(),
+                size: 1234,
+            }),
+            event,
+        );
+
+        let download_event_type = DownloadEvent::Digest {
+            download_id: "download-123".to_string(),
+        };
+        let event = download_event_type.build_download_started_event(1234);
+        assert_eq!(
+            MithrilEvent::CardanoDatabase(MithrilEventCardanoDatabase::DigestDownloadStarted {
+                download_id: "download-123".to_string(),
+                size: 1234,
+            }),
+            event,
+        );
+
+        let download_event_type = DownloadEvent::Full {
+            download_id: "download-123".to_string(),
+            digest: "digest-123".to_string(),
+        };
+        let event = download_event_type.build_download_started_event(1234);
+        assert_eq!(
+            MithrilEvent::SnapshotDownloadStarted {
+                digest: "digest-123".to_string(),
+                download_id: "download-123".to_string(),
+                size: 1234,
+            },
+            event,
+        );
+    }
+
+    #[test]
+    fn download_event_type_builds_progress_event() {
         let download_event_type = DownloadEvent::Immutable {
             download_id: "download-123".to_string(),
             immutable_file_number: 123,
@@ -271,6 +413,7 @@ mod tests {
 
         let download_event_type = DownloadEvent::Full {
             download_id: "download-123".to_string(),
+            digest: "whatever".to_string(),
         };
         let event = download_event_type.build_download_progress_event(123, 1234);
         assert_eq!(
@@ -278,6 +421,100 @@ mod tests {
                 download_id: "download-123".to_string(),
                 downloaded_bytes: 123,
                 size: 1234,
+            },
+            event,
+        );
+    }
+
+    #[test]
+    fn file_downloader_uri_from_ancillary_location() {
+        let location = AncillaryLocation::CloudStorage {
+            uri: "http://whatever/ancillary-1".to_string(),
+        };
+        let file_downloader_uri: FileDownloaderUri = location.try_into().unwrap();
+
+        assert_eq!(
+            FileDownloaderUri::FileUri(FileUri("http://whatever/ancillary-1".to_string())),
+            file_downloader_uri
+        );
+    }
+    #[test]
+    fn file_downloader_uri_from_unknown_ancillary_location() {
+        let location = AncillaryLocation::Unknown;
+        let file_downloader_uri: StdResult<FileDownloaderUri> = location.try_into();
+
+        file_downloader_uri.expect_err("try_into should fail on Unknown ancillary location");
+    }
+
+    #[test]
+    fn file_downloader_uri_from_digest_location() {
+        let location = DigestLocation::CloudStorage {
+            uri: "http://whatever/digest-1".to_string(),
+        };
+        let file_downloader_uri: FileDownloaderUri = location.try_into().unwrap();
+
+        assert_eq!(
+            FileDownloaderUri::FileUri(FileUri("http://whatever/digest-1".to_string())),
+            file_downloader_uri
+        );
+    }
+    #[test]
+    fn file_downloader_uri_from_unknown_digest_location() {
+        let location = DigestLocation::Unknown;
+        let file_downloader_uri: StdResult<FileDownloaderUri> = location.try_into();
+
+        file_downloader_uri.expect_err("try_into should fail on Unknown digest location");
+    }
+
+    #[test]
+    fn download_event_type_builds_completed_event() {
+        let download_event_type = DownloadEvent::Immutable {
+            download_id: "download-123".to_string(),
+            immutable_file_number: 123,
+        };
+        let event = download_event_type.build_download_completed_event();
+        assert_eq!(
+            MithrilEvent::CardanoDatabase(
+                MithrilEventCardanoDatabase::ImmutableDownloadCompleted {
+                    immutable_file_number: 123,
+                    download_id: "download-123".to_string()
+                }
+            ),
+            event,
+        );
+
+        let download_event_type = DownloadEvent::Ancillary {
+            download_id: "download-123".to_string(),
+        };
+        let event = download_event_type.build_download_completed_event();
+        assert_eq!(
+            MithrilEvent::CardanoDatabase(
+                MithrilEventCardanoDatabase::AncillaryDownloadCompleted {
+                    download_id: "download-123".to_string(),
+                }
+            ),
+            event,
+        );
+
+        let download_event_type = DownloadEvent::Digest {
+            download_id: "download-123".to_string(),
+        };
+        let event = download_event_type.build_download_completed_event();
+        assert_eq!(
+            MithrilEvent::CardanoDatabase(MithrilEventCardanoDatabase::DigestDownloadCompleted {
+                download_id: "download-123".to_string(),
+            }),
+            event,
+        );
+
+        let download_event_type = DownloadEvent::Full {
+            download_id: "download-123".to_string(),
+            digest: "whatever".to_string(),
+        };
+        let event = download_event_type.build_download_completed_event();
+        assert_eq!(
+            MithrilEvent::SnapshotDownloadCompleted {
+                download_id: "download-123".to_string(),
             },
             event,
         );
