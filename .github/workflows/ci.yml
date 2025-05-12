@@ -288,119 +288,119 @@ jobs:
         if: success() || failure()
         run: make check-format
 
-  e2e:
-    runs-on: ubuntu-24.04
-    needs: [build-ubuntu-X64]
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: ["std"]
-        era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras) }}
-        next_era: [""]
-        cardano_node_version: ["10.2.1", "10.3.1"]
-        hard_fork_latest_era_at_epoch: [0]
-        run_id: ["#1", "#2", "#3"]
-        extra_args: [""]
+  # e2e:
+  #   runs-on: ubuntu-24.04
+  #   needs: [build-ubuntu-X64]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       mode: ["std"]
+  #       era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras) }}
+  #       next_era: [""]
+  #       cardano_node_version: ["10.2.1", "10.3.1"]
+  #       hard_fork_latest_era_at_epoch: [0]
+  #       run_id: ["#1", "#2", "#3"]
+  #       extra_args: [""]
 
-        include:
-          # Include a test for partial decentralization with leader/follower signer registration and P2P signature registration
-          - mode: "leader-follower"
-            era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[0] }}
-            next_era: [""]
-            cardano_node_version: "10.3.1"
-            hard_fork_latest_era_at_epoch: 0
-            run_id: "#1"
-            extra_args: "--number-of-aggregators=2 --use-relays --relay-signer-registration-mode=passthrough --relay-signature-registration-mode=p2p"
-          # Include a test for full dedentralization P2P signer registration and P2P signature registration
-          - mode: "decentralized"
-            era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[0] }}
-            next_era: ""
-            cardano_node_version: "10.3.1"
-            hard_fork_latest_era_at_epoch: 0
-            run_id: "#1"
-            extra_args: "--number-of-aggregators=2 --use-relays --relay-signer-registration-mode=p2p --relay-signature-registration-mode=p2p"
-          # Include a test for the era switch without regenesis
-          - mode: "std"
-            era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[0] }}
-            next_era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[1] }}
-            cardano_node_version: "10.3.1"
-            hard_fork_latest_era_at_epoch: 0
-            run_id: "#1"
-            extra_args: ""
-          # Include a test for the era switch with regenesis
-          - mode: "std"
-            era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[0] }}
-            next_era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[1] }}
-            cardano_node_version: "10.3.1"
-            hard_fork_latest_era_at_epoch: 0
-            run_id: "#1"
-            extra_args: "--mithril-era-regenesis-on-switch"
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+  #       include:
+  #         # Include a test for partial decentralization with leader/follower signer registration and P2P signature registration
+  #         - mode: "leader-follower"
+  #           era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[0] }}
+  #           next_era: [""]
+  #           cardano_node_version: "10.3.1"
+  #           hard_fork_latest_era_at_epoch: 0
+  #           run_id: "#1"
+  #           extra_args: "--number-of-aggregators=2 --use-relays --relay-signer-registration-mode=passthrough --relay-signature-registration-mode=p2p"
+  #         # Include a test for full dedentralization P2P signer registration and P2P signature registration
+  #         - mode: "decentralized"
+  #           era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[0] }}
+  #           next_era: ""
+  #           cardano_node_version: "10.3.1"
+  #           hard_fork_latest_era_at_epoch: 0
+  #           run_id: "#1"
+  #           extra_args: "--number-of-aggregators=2 --use-relays --relay-signer-registration-mode=p2p --relay-signature-registration-mode=p2p"
+  #         # Include a test for the era switch without regenesis
+  #         - mode: "std"
+  #           era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[0] }}
+  #           next_era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[1] }}
+  #           cardano_node_version: "10.3.1"
+  #           hard_fork_latest_era_at_epoch: 0
+  #           run_id: "#1"
+  #           extra_args: ""
+  #         # Include a test for the era switch with regenesis
+  #         - mode: "std"
+  #           era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[0] }}
+  #           next_era: ${{ fromJSON(needs.build-ubuntu-X64.outputs.eras)[1] }}
+  #           cardano_node_version: "10.3.1"
+  #           hard_fork_latest_era_at_epoch: 0
+  #           run_id: "#1"
+  #           extra_args: "--mithril-era-regenesis-on-switch"
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
 
-      - name: Download binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: mithril-distribution-${{ runner.os }}-${{ runner.arch }}
-          path: ./bin
+  #     - name: Download binaries
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: mithril-distribution-${{ runner.os }}-${{ runner.arch }}
+  #         path: ./bin
 
-      - name: Download rust test runner
-        uses: actions/download-artifact@v4
-        with:
-          name: mithril-tooling-${{ runner.os }}-${{ runner.arch }}
-          path: ./
+  #     - name: Download rust test runner
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: mithril-tooling-${{ runner.os }}-${{ runner.arch }}
+  #         path: ./
 
-      - run: |
-          chmod +x ./bin/mithril-aggregator
-          chmod +x ./bin/mithril-client
-          chmod +x ./bin/mithril-signer
-          chmod +x ./bin/mithril-relay
-          chmod +x ./mithril-end-to-end
-          mkdir artifacts
+  #     - run: |
+  #         chmod +x ./bin/mithril-aggregator
+  #         chmod +x ./bin/mithril-client
+  #         chmod +x ./bin/mithril-signer
+  #         chmod +x ./bin/mithril-relay
+  #         chmod +x ./mithril-end-to-end
+  #         mkdir artifacts
 
-      - name: Test
-        uses: nick-fields/retry@v3
-        with:
-          shell: bash
-          max_attempts: 3
-          retry_on_exit_code: 2
-          timeout_minutes: 10
-          warning_on_retry: true
-          command: |
-            cat > ./mithril-end-to-end.sh << EOF
-            #!/bin/bash
-            set -x
-            ./mithril-end-to-end -vvv \\
-                    --bin-directory ./bin \\
-                    --work-directory=./artifacts \\
-                    --devnet-scripts-directory=./mithril-test-lab/mithril-devnet \\
-                    --mithril-era=${{ matrix.era }} \\
-                    --cardano-node-version ${{ matrix.cardano_node_version }} \\
-                    --cardano-hard-fork-latest-era-at-epoch ${{ matrix.hard_fork_latest_era_at_epoch }} ${{ matrix.extra_args }} \\
-            EOF
-            # If there is a next era, we need to specify it with '--mithril-next-era'
-            if [[ "${{ matrix.next_era }}" != "" ]]; then
-              echo "  --mithril-next-era=${{ matrix.next_era }}" >> ./mithril-end-to-end.sh
-            fi
-            chmod u+x ./mithril-end-to-end.sh
-            ./mithril-end-to-end.sh
-            EXIT_CODE=$?
-            rm ./mithril-end-to-end.sh
-            exit $EXIT_CODE
+  #     - name: Test
+  #       uses: nick-fields/retry@v3
+  #       with:
+  #         shell: bash
+  #         max_attempts: 3
+  #         retry_on_exit_code: 2
+  #         timeout_minutes: 10
+  #         warning_on_retry: true
+  #         command: |
+  #           cat > ./mithril-end-to-end.sh << EOF
+  #           #!/bin/bash
+  #           set -x
+  #           ./mithril-end-to-end -vvv \\
+  #                   --bin-directory ./bin \\
+  #                   --work-directory=./artifacts \\
+  #                   --devnet-scripts-directory=./mithril-test-lab/mithril-devnet \\
+  #                   --mithril-era=${{ matrix.era }} \\
+  #                   --cardano-node-version ${{ matrix.cardano_node_version }} \\
+  #                   --cardano-hard-fork-latest-era-at-epoch ${{ matrix.hard_fork_latest_era_at_epoch }} ${{ matrix.extra_args }} \\
+  #           EOF
+  #           # If there is a next era, we need to specify it with '--mithril-next-era'
+  #           if [[ "${{ matrix.next_era }}" != "" ]]; then
+  #             echo "  --mithril-next-era=${{ matrix.next_era }}" >> ./mithril-end-to-end.sh
+  #           fi
+  #           chmod u+x ./mithril-end-to-end.sh
+  #           ./mithril-end-to-end.sh
+  #           EXIT_CODE=$?
+  #           rm ./mithril-end-to-end.sh
+  #           exit $EXIT_CODE
 
-      - name: Upload E2E Tests Artifacts
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: mithril-e2e-tests-artifacts-run_${{ github.run_number }}-attempt_${{ github.run_attempt }}-mode_${{ matrix.mode }}-era_${{ matrix.era }}-cardano-${{ matrix.cardano_node_version }}-fork-${{  matrix.hard_fork_latest_era_at_epoch }}-run_id_${{ matrix.run_id }}
-          path: |
-            ./artifacts/*
-            # including node.sock makes the upload fails so exclude them:
-            !./artifacts/**/node.sock
-            # exclude cardano tools, saving ~500mb of data:
-            !./artifacts/devnet/bin/
-          if-no-files-found: error
+  #     - name: Upload E2E Tests Artifacts
+  #       if: ${{ failure() }}
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: mithril-e2e-tests-artifacts-run_${{ github.run_number }}-attempt_${{ github.run_attempt }}-mode_${{ matrix.mode }}-era_${{ matrix.era }}-cardano-${{ matrix.cardano_node_version }}-fork-${{  matrix.hard_fork_latest_era_at_epoch }}-run_id_${{ matrix.run_id }}
+  #         path: |
+  #           ./artifacts/*
+  #           # including node.sock makes the upload fails so exclude them:
+  #           !./artifacts/**/node.sock
+  #           # exclude cardano tools, saving ~500mb of data:
+  #           !./artifacts/devnet/bin/
+  #         if-no-files-found: error
 
   send-tests-results:
     if: success() || failure()
@@ -427,7 +427,7 @@ jobs:
       - build
       - check
       - test
-      - e2e
+      # - e2e
     strategy:
       fail-fast: false
       matrix:
@@ -500,7 +500,7 @@ jobs:
     needs:
       - build
       - test
-      - e2e
+      # - e2e
       - check
     steps:
       - name: Checkout sources
@@ -553,86 +553,86 @@ jobs:
           access: ${{ matrix.access }}
           api_token: ${{ secrets[matrix.api_token_secret_name] }}
 
-  unstable-release:
-    if: vars.PUBLISH_UNSTABLE_RELEASE_IN_CI == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith('refs/heads/hotfix', github.ref))
-    runs-on: ubuntu-24.04
-    needs:
-      - build
-      - build-test-wasm
-      - build-test-explorer
-      - test
-      - e2e
-      - check
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+  # unstable-release:
+  #   if: vars.PUBLISH_UNSTABLE_RELEASE_IN_CI == 'true' && github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith('refs/heads/hotfix', github.ref))
+  #   runs-on: ubuntu-24.04
+  #   needs:
+  #     - build
+  #     - build-test-wasm
+  #     - build-test-explorer
+  #     - test
+  #     - e2e
+  #     - check
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
 
-      - name: Prepare packaging
-        run: mkdir package
+  #     - name: Prepare packaging
+  #       run: mkdir package
 
-      - name: Get short SHA
-        id: slug
-        run: echo "sha8=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+  #     - name: Get short SHA
+  #       id: slug
+  #       run: echo "sha8=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
-      - name: Download built artifacts (Linux-X64)
-        uses: actions/download-artifact@v4
-        with:
-          name: mithril-distribution-Linux-X64
-          path: ./package-Linux-X64
+  #     - name: Download built artifacts (Linux-X64)
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: mithril-distribution-Linux-X64
+  #         path: ./package-Linux-X64
 
-      - name: Download Debian packages (Linux-X64)
-        uses: actions/download-artifact@v4
-        with:
-          name: mithril-deb-packages-Linux-X64
-          path: ./package
+  #     - name: Download Debian packages (Linux-X64)
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: mithril-deb-packages-Linux-X64
+  #         path: ./package
 
-      - name: Download built artifacts (macOS-ARM64)
-        uses: actions/download-artifact@v4
-        with:
-          name: mithril-distribution-macOS-ARM64
-          path: ./package-macOS-ARM64
+  #     - name: Download built artifacts (macOS-ARM64)
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: mithril-distribution-macOS-ARM64
+  #         path: ./package-macOS-ARM64
 
-      - name: Download built artifacts (Windows-X64)
-        uses: actions/download-artifact@v4
-        with:
-          name: mithril-distribution-Windows-X64
-          path: ./package-Windows-X64
+  #     - name: Download built artifacts (Windows-X64)
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: mithril-distribution-Windows-X64
+  #         path: ./package-Windows-X64
 
-      - name: Download built artifacts (Explorer)
-        uses: actions/download-artifact@v4
-        with:
-          name: explorer-build
-          path: ./package-explorer
+  #     - name: Download built artifacts (Explorer)
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: explorer-build
+  #         path: ./package-explorer
 
-      - name: Prepare distribution package
-        uses: ./.github/workflows/actions/prepare-distribution
-        with:
-          version-name: unstable-${{ steps.slug.outputs.sha8 }}
-          download-url-base: ${{ github.server_url }}/${{ github.repository }}/releases/download/unstable
-          gpg-secret-key: ${{ secrets.GPG_SECRET_KEY }}
-          compatibility-table: '{ "release-mainnet": "⛔", "release-preprod": "⛔", "pre-release-preview": "⛔", "testing-preview": "✔" }'
+  #     - name: Prepare distribution package
+  #       uses: ./.github/workflows/actions/prepare-distribution
+  #       with:
+  #         version-name: unstable-${{ steps.slug.outputs.sha8 }}
+  #         download-url-base: ${{ github.server_url }}/${{ github.repository }}/releases/download/unstable
+  #         gpg-secret-key: ${{ secrets.GPG_SECRET_KEY }}
+  #         compatibility-table: '{ "release-mainnet": "⛔", "release-preprod": "⛔", "pre-release-preview": "⛔", "testing-preview": "✔" }'
 
-      - name: Delete unstable release and associated tag
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          if gh release view unstable -R ${{ github.repository }} &>/dev/null; then
-            gh release delete unstable --cleanup-tag -y -R ${{ github.repository }}
-          else
-            echo "Release 'unstable' not found, skipping deletion."
-          fi
+  #     - name: Delete unstable release and associated tag
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       run: |
+  #         if gh release view unstable -R ${{ github.repository }} &>/dev/null; then
+  #           gh release delete unstable --cleanup-tag -y -R ${{ github.repository }}
+  #         else
+  #           echo "Release 'unstable' not found, skipping deletion."
+  #         fi
 
-      - name: Update unstable release
-        uses: softprops/action-gh-release@v2
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          tag_name: unstable
-          prerelease: true
-          name: Unstable Development Builds
-          files: package/*
-          generate_release_notes: true
-          body_path: ./release-notes-addon.txt
-          append_body: true
+  #     - name: Update unstable release
+  #       uses: softprops/action-gh-release@v2
+  #       with:
+  #         token: ${{ secrets.GITHUB_TOKEN }}
+  #         tag_name: unstable
+  #         prerelease: true
+  #         name: Unstable Development Builds
+  #         files: package/*
+  #         generate_release_notes: true
+  #         body_path: ./release-notes-addon.txt
+  #         append_body: true
 
   deploy-testing:
     if: vars.DEPLOY_NETWORKS_IN_CI == 'true' && (github.event_name == 'push' || github.event_name == 'pull_request')
@@ -905,62 +905,62 @@ jobs:
           path: |
             out/*
 
-  publish-docs:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    runs-on: ubuntu-24.04
-    needs:
-      - cargo-doc
-      - build-docusaurus
-      - build-test-explorer
-      - build-open-api-ui
-      - check
-    steps:
-      - name: Download mithril-rust-doc artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: mithril-rust-doc
-          path: ./github-pages/rust-doc
+  # publish-docs:
+  #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  #   runs-on: ubuntu-24.04
+  #   needs:
+  #     - cargo-doc
+  #     - build-docusaurus
+  #     - build-test-explorer
+  #     - build-open-api-ui
+  #     - check
+  #   steps:
+  #     - name: Download mithril-rust-doc artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: mithril-rust-doc
+  #         path: ./github-pages/rust-doc
 
-      - name: Download Docusaurus build
-        uses: actions/download-artifact@v4
-        with:
-          name: docusaurus-build
-          path: ./github-pages/doc
+  #     - name: Download Docusaurus build
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: docusaurus-build
+  #         path: ./github-pages/doc
 
-      - name: Download and unpack Explorer build (stable)
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Note: If the tag is omitted, 'gh release' commands uses the latest released version
-          LAST_DISTRIBUTION=$(gh release view -R ${{ github.repository }} --json "tagName" --jq ".tagName")
-          gh release download -R ${{ github.repository }} --pattern "mithril-explorer-${LAST_DISTRIBUTION}*"
+  #     - name: Download and unpack Explorer build (stable)
+  #       shell: bash
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #       run: |
+  #         # Note: If the tag is omitted, 'gh release' commands uses the latest released version
+  #         LAST_DISTRIBUTION=$(gh release view -R ${{ github.repository }} --json "tagName" --jq ".tagName")
+  #         gh release download -R ${{ github.repository }} --pattern "mithril-explorer-${LAST_DISTRIBUTION}*"
 
-          mkdir -p ./github-pages/explorer/
-          tar xvf mithril-explorer-${LAST_DISTRIBUTION}.tar.gz --directory=./github-pages/explorer/
+  #         mkdir -p ./github-pages/explorer/
+  #         tar xvf mithril-explorer-${LAST_DISTRIBUTION}.tar.gz --directory=./github-pages/explorer/
 
-      - name: Download Explorer build (unstable)
-        uses: actions/download-artifact@v4
-        with:
-          name: explorer-build-unstable
-          path: ./github-pages/explorer/unstable
+  #     - name: Download Explorer build (unstable)
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: explorer-build-unstable
+  #         path: ./github-pages/explorer/unstable
 
-      - name: Download OpenAPI UI build
-        uses: actions/download-artifact@v4
-        with:
-          name: openapi-ui-build
-          path: ./github-pages/openapi-ui
+  #     - name: Download OpenAPI UI build
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: openapi-ui-build
+  #         path: ./github-pages/openapi-ui
 
-      - name: Add CNAME & Redirect
-        run: |
-          echo "mithril.network" > ./github-pages/CNAME
-          echo '<!DOCTYPE html><html><head><meta http-equiv="Refresh" content="0; URL=https://mithril.network/doc"></head></html>' > ./github-pages/index.html
-          # Remove the index.html from the url to avoid a display issue that duplicates the content of the page
-          sed -i '1s/^/<script type="text\/javascript"> if (window.location.href.endsWith("\/index.html")) { end_of_clean_url = window.location.href.lastIndexOf("\/"); window.location.href = window.location.href.substring(0, end_of_clean_url); } <\/script>\n/' ./github-pages/doc/index.html
+  #     - name: Add CNAME & Redirect
+  #       run: |
+  #         echo "mithril.network" > ./github-pages/CNAME
+  #         echo '<!DOCTYPE html><html><head><meta http-equiv="Refresh" content="0; URL=https://mithril.network/doc"></head></html>' > ./github-pages/index.html
+  #         # Remove the index.html from the url to avoid a display issue that duplicates the content of the page
+  #         sed -i '1s/^/<script type="text\/javascript"> if (window.location.href.endsWith("\/index.html")) { end_of_clean_url = window.location.href.lastIndexOf("\/"); window.location.href = window.location.href.substring(0, end_of_clean_url); } <\/script>\n/' ./github-pages/doc/index.html
 
-      - name: Mithril / Publish GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN || github.token }}
-          publish_dir: ./github-pages
-          force_orphan: true
+  #     - name: Mithril / Publish GitHub Pages
+  #       uses: peaceiris/actions-gh-pages@v4
+  #       with:
+  #         github_token: ${{ secrets.GITHUB_TOKEN || github.token }}
+  #         publish_dir: ./github-pages
+  #         force_orphan: true

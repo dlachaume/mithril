@@ -9,13 +9,10 @@ fi
 
 CLIENT_CMD="$1"
 
-# Run mithril-client and capture the output
-OUTPUT=$(eval "$CLIENT_CMD")
+CLIENT_CMD_OUTPUT=$(eval "$CLIENT_CMD")
+echo "$CLIENT_CMD_OUTPUT"
 
-# Search for the line containing 'docker run'
-DOCKER_CMD=$(echo "$OUTPUT" | grep -E '^\s*docker run')
-
-# Check if the Docker command was found
+DOCKER_CMD=$(echo "$CLIENT_CMD_OUTPUT" | grep -E '^\s*docker run')
 if [[ -n "$DOCKER_CMD" ]]; then
   echo "Extracted Docker command:"
   echo "$DOCKER_CMD"
@@ -26,10 +23,8 @@ if [[ -n "$DOCKER_CMD" ]]; then
 
   CONTAINER_ID=$(eval "$DOCKER_CMD_DETACHED")
 
-  echo "Container started with ID: $CONTAINER_ID"
-  echo "Waiting up to 15 seconds for 'Started opening Immutable DB'..."
-
   FOUND_LOG=false
+  echo "Waiting up to 15 seconds for 'Started opening Immutable DB'..."
   for ((i=1; i<=15; i++)); do
     if docker logs "$CONTAINER_ID" 2>&1 | grep -q "Started opening Immutable DB"; then
       FOUND_LOG=true
@@ -39,10 +34,12 @@ if [[ -n "$DOCKER_CMD" ]]; then
   done
 
   if [[ "$FOUND_LOG" == true ]]; then
-    echo "✅ Found 'Started opening Immutable DB' in logs."
+    echo "✅ The Cardano node started successfully from the Mithril snapshot."
+    echo "Found 'Started opening Immutable DB' in logs."
     exit 0
   else
-    echo "❌ 'Started opening Immutable DB' not found within 15 seconds."
+    echo "❌ 'Failed to start the Cardano node from the Mithril snapshot."
+    echo "'Started opening Immutable DB' not found within 15 seconds."
     docker logs "$CONTAINER_ID"
     exit 1
   fi
