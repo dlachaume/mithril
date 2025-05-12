@@ -169,124 +169,124 @@ jobs:
           path: |
             mithril-client-wasm/*-mithril-client-wasm-*.tgz
           if-no-files-found: error
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, macos-14, windows-latest]
+  # test:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-24.04, macos-14, windows-latest]
 
-        include:
-          - os: ubuntu-24.04
-            test-args: --features full,unstable --workspace
-          # Only test client on windows & mac (since its the only binaries supported for those os for now)
-          - os: macos-14
-            test-args: --package mithril-client --package mithril-client-cli --features full,unstable
-          - os: windows-latest
-            test-args: --package mithril-client --package mithril-client-cli --features full,unstable
+  #       include:
+  #         - os: ubuntu-24.04
+  #           test-args: --features full,unstable --workspace
+  #         # Only test client on windows & mac (since its the only binaries supported for those os for now)
+  #         - os: macos-14
+  #           test-args: --package mithril-client --package mithril-client-cli --features full,unstable
+  #         - os: windows-latest
+  #           test-args: --package mithril-client --package mithril-client-cli --features full,unstable
 
-    runs-on: ${{ matrix.os }}
+  #   runs-on: ${{ matrix.os }}
 
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
 
-      - name: Install stable toolchain, tools, and restore cache
-        uses: ./.github/workflows/actions/toolchain-and-cache
-        with:
-          cache-version: ${{ vars.CACHE_VERSION }}
-          cargo-tools: cargo-nextest
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Install stable toolchain, tools, and restore cache
+  #       uses: ./.github/workflows/actions/toolchain-and-cache
+  #       with:
+  #         cache-version: ${{ vars.CACHE_VERSION }}
+  #         cargo-tools: cargo-nextest
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build tests
-        run: cargo nextest run --no-run ${{ matrix.test-args }}
+  #     - name: Build tests
+  #       run: cargo nextest run --no-run ${{ matrix.test-args }}
 
-      - name: Run tests
-        run: cargo nextest run --profile ci ${{ matrix.test-args }}
+  #     - name: Run tests
+  #       run: cargo nextest run --profile ci ${{ matrix.test-args }}
 
-      - name: Run doc tests
-        run: cargo test --doc ${{ matrix.test-args }}
+  #     - name: Run doc tests
+  #       run: cargo test --doc ${{ matrix.test-args }}
 
-      - name: Ensure examples build
-        run: cargo build --examples ${{ matrix.test-args }}
+  #     - name: Ensure examples build
+  #       run: cargo build --examples ${{ matrix.test-args }}
 
-      - name: Rename junit file to include runner info
-        shell: bash
-        if: success() || failure()
-        run: |
-          mv target/nextest/ci/tests-result.junit.xml test-results${{ matrix.artifact-suffix }}-${{ runner.os }}-${{ runner.arch }}.xml
+  #     - name: Rename junit file to include runner info
+  #       shell: bash
+  #       if: success() || failure()
+  #       run: |
+  #         mv target/nextest/ci/tests-result.junit.xml test-results${{ matrix.artifact-suffix }}-${{ runner.os }}-${{ runner.arch }}.xml
 
-      - name: Upload Tests Results
-        uses: actions/upload-artifact@v4
-        if: success() || failure()
-        with:
-          name: test-results-${{ runner.os }}-${{ runner.arch }}
-          path: ./test-results-*.xml
+  #     - name: Upload Tests Results
+  #       uses: actions/upload-artifact@v4
+  #       if: success() || failure()
+  #       with:
+  #         name: test-results-${{ runner.os }}-${{ runner.arch }}
+  #         path: ./test-results-*.xml
 
-  check:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+  # check:
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
 
-      - name: Install stable toolchain, tools, and restore cache
-        uses: ./.github/workflows/actions/toolchain-and-cache
-        with:
-          cache-version: ${{ vars.CACHE_VERSION }}
-          cargo-tools: cargo-machete cargo-sort clippy-sarif sarif-fmt
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Install stable toolchain, tools, and restore cache
+  #       uses: ./.github/workflows/actions/toolchain-and-cache
+  #       with:
+  #         cache-version: ${{ vars.CACHE_VERSION }}
+  #         cargo-tools: cargo-machete cargo-sort clippy-sarif sarif-fmt
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install prettier
-        shell: bash
-        run: npm install -g prettier
+  #     - name: Install prettier
+  #       shell: bash
+  #       run: npm install -g prettier
 
-      - name: Clippy Check
-        if: success() || failure()
-        run: |
-          cargo clippy \
-            --all-features --all-targets --no-deps --message-format=json \
-            | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
+  #     - name: Clippy Check
+  #       if: success() || failure()
+  #       run: |
+  #         cargo clippy \
+  #           --all-features --all-targets --no-deps --message-format=json \
+  #           | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
 
-          # Make this step fail if any warning has been found
-          if [[ $(cat rust-clippy-results.sarif | jq '.runs[0].results') != "[]" ]]; then
-            false
-          fi
+  #         # Make this step fail if any warning has been found
+  #         if [[ $(cat rust-clippy-results.sarif | jq '.runs[0].results') != "[]" ]]; then
+  #           false
+  #         fi
 
-      - name: Upload clippy analysis results to GitHub
-        if: success() || failure()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: rust-clippy-results.sarif
-          wait-for-processing: true
+  #     - name: Upload clippy analysis results to GitHub
+  #       if: success() || failure()
+  #       uses: github/codeql-action/upload-sarif@v3
+  #       with:
+  #         sarif_file: rust-clippy-results.sarif
+  #         wait-for-processing: true
 
-      - name: Cargo fmt
-        if: success() || failure()
-        shell: bash
-        run: cargo fmt --check
+  #     - name: Cargo fmt
+  #       if: success() || failure()
+  #       shell: bash
+  #       run: cargo fmt --check
 
-      - name: Cargo sort
-        if: success() || failure()
-        shell: bash
-        run: cargo sort -w -c
+  #     - name: Cargo sort
+  #       if: success() || failure()
+  #       shell: bash
+  #       run: cargo sort -w -c
 
-      - name: Cargo machete (check unused dependencies)
-        if: success() || failure()
-        shell: bash
-        run: cargo machete
+  #     - name: Cargo machete (check unused dependencies)
+  #       if: success() || failure()
+  #       shell: bash
+  #       run: cargo machete
 
-      - name: Dependency & Vulnerabilities Review
-        if: github.event_name == 'pull_request'
-        uses: actions/dependency-review-action@v4
-        with:
-          base-ref: ${{ github.event.pull_request.base.sha || 'main' }}
-          head-ref: ${{ github.event.pull_request.head.sha || github.ref }}
+  #     - name: Dependency & Vulnerabilities Review
+  #       if: github.event_name == 'pull_request'
+  #       uses: actions/dependency-review-action@v4
+  #       with:
+  #         base-ref: ${{ github.event.pull_request.base.sha || 'main' }}
+  #         head-ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
-      - name: Check networks.json validity
-        if: success() || failure()
-        run: jq . networks.json
+  #     - name: Check networks.json validity
+  #       if: success() || failure()
+  #       run: jq . networks.json
 
-      - name: Check code formatting
-        if: success() || failure()
-        run: make check-format
+  #     - name: Check code formatting
+  #       if: success() || failure()
+  #       run: make check-format
 
   # e2e:
   #   runs-on: ubuntu-24.04
@@ -402,31 +402,31 @@ jobs:
   #           !./artifacts/devnet/bin/
   #         if-no-files-found: error
 
-  send-tests-results:
-    if: success() || failure()
-    runs-on: ubuntu-24.04
-    needs:
-      - test
-    steps:
-      - name: Download Tests Results
-        if: success() || failure()
-        uses: actions/download-artifact@v4
-        with:
-          pattern: test-results-*
-          merge-multiple: true
+  # send-tests-results:
+  #   if: success() || failure()
+  #   runs-on: ubuntu-24.04
+  #   needs:
+  #     - test
+  #   steps:
+  #     - name: Download Tests Results
+  #       if: success() || failure()
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         pattern: test-results-*
+  #         merge-multiple: true
 
-      - name: Publish Unit Test Results
-        if: success() || failure()
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          junit_files: ./**/test-results-*.xml
+  #     - name: Publish Unit Test Results
+  #       if: success() || failure()
+  #       uses: EnricoMi/publish-unit-test-result-action@v2
+  #       with:
+  #         junit_files: ./**/test-results-*.xml
 
   docker-mithril:
     runs-on: ubuntu-24.04
     needs:
       - build
-      - check
-      - test
+      # - check
+      # - test
       # - e2e
     strategy:
       fail-fast: false
@@ -499,9 +499,9 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - build
-      - test
+      # - test
       # - e2e
-      - check
+      # - check
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4

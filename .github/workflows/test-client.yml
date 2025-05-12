@@ -115,8 +115,6 @@ jobs:
             echo "INCLUDE_ANCILLARY=--include-ancillary" >> $GITHUB_OUTPUT
           fi
 
-          echo "VERIFY_CARDANO_DB_RESTORATION_SCRIPT=./.github/workflows/scripts/verify-cardano-db-restoration.sh" >> $GITHUB_ENV
-
       - name: Assessing aggregator capabilities (Unix)
         id: aggregator_capability_unix
         if: runner.os != 'Windows'
@@ -172,7 +170,7 @@ jobs:
       - name: Cardano Database Snapshot / download & restore latest
         shell: bash
         working-directory: ./bin
-        run: $VERIFY_CARDANO_DB_RESTORATION_SCRIPT "./mithril-client ${{ steps.prepare.outputs.debug_level }} --origin-tag CI cardano-db download $CDB_SNAPSHOT_DIGEST $INCLUDE_ANCILLARY"
+        run: ../.github/workflows/scripts/verify-cardano-db-restoration.sh "./mithril-client ${{ steps.prepare.outputs.debug_level }} --origin-tag CI cardano-db download $CDB_SNAPSHOT_DIGEST $INCLUDE_ANCILLARY"
 
       - name: Mithril Stake Distribution / list and get last hash
         shell: bash
@@ -246,7 +244,7 @@ jobs:
         if: steps.aggregator_capability_unix.outputs.cardano_database_v2_enabled == 'true' || steps.aggregator_capability_windows.outputs.cardano_database_v2_enabled == 'true'
         shell: bash
         working-directory: ./bin
-        run: $VERIFY_CARDANO_DB_RESTORATION_SCRIPT "./mithril-client ${{ steps.prepare.outputs.debug_level }} --unstable --origin-tag CI cardano-db-v2 download $CARDANO_DATABASE_V2_SNAPSHOT_HASH $INCLUDE_ANCILLARY"
+        run: ../.github/workflows/scripts/verify-cardano-db-restoration.sh "./mithril-client ${{ steps.prepare.outputs.debug_level }} --unstable --origin-tag CI cardano-db-v2 download $CARDANO_DATABASE_V2_SNAPSHOT_HASH $INCLUDE_ANCILLARY"
 
   test-docker:
     strategy:
