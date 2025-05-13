@@ -168,19 +168,20 @@ jobs:
           echo "CDB_SNAPSHOT_DIGEST=$(./mithril-client --origin-tag CI cardano-db snapshot list --json | jq -r '.[0].digest')" >> $GITHUB_ENV
 
       - name: Cardano Database Snapshot / download & restore latest
-        id: cdb-download-output
+        id: cardano-db-download
         shell: bash
         working-directory: ./bin
         run: |
           OUTPUT=$(./mithril-client ${{ steps.prepare.outputs.debug_level }} --origin-tag CI cardano-db download $CDB_SNAPSHOT_DIGEST $INCLUDE_ANCILLARY)
-          echo "cmd_output<<EOF" >> $GITHUB_OUTPUT
-          echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "$OUTPUT"
+          echo "cmd_output<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$OUTPUT" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Cardano Database Snapshot / Verify Cardano database restoration
         if: runner.os == 'Linux'
         shell: bash
-        run: .github/workflows/scripts/verify-cardano-db-restoration.sh "${{ steps.cdb-download-output.outputs.cmd_output }}"
+        run: .github/workflows/scripts/verify-cardano-db-restoration.sh "${{ steps.cardano-db-download.outputs.cmd_output }}"
 
       - name: Mithril Stake Distribution / list and get last hash
         shell: bash
@@ -251,21 +252,21 @@ jobs:
         run: ./mithril-client --unstable --origin-tag CI cardano-db-v2 snapshot show $CARDANO_DATABASE_V2_SNAPSHOT_HASH
 
       - name: Cardano Database V2 Snapshot / download & restore latest (Full restoration)
-        id: cdbv2-download-output
+        id: cardano-db-v2-download
         if: steps.aggregator_capability_unix.outputs.cardano_database_v2_enabled == 'true' || steps.aggregator_capability_windows.outputs.cardano_database_v2_enabled == 'true'
         shell: bash
         working-directory: ./bin
         run: |
           OUTPUT=$(./mithril-client ${{ steps.prepare.outputs.debug_level }} --unstable --origin-tag CI cardano-db-v2 download $CARDANO_DATABASE_V2_SNAPSHOT_HASH $INCLUDE_ANCILLARY)
           echo "$OUTPUT"
-          echo "cmd_output<<EOF" >> $GITHUB_OUTPUT
-          echo "$OUTPUT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          echo "cmd_output<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$OUTPUT" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Cardano Database V2 Snapshot / Verify Cardano database restoration
         if: runner.os == 'Linux' && steps.aggregator_capability_unix.outputs.cardano_database_v2_enabled == 'true'
         shell: bash
-        run: .github/workflows/scripts/verify-cardano-db-restoration.sh "${{ steps.cdbv2-download-output.outputs.cmd_output }}"
+        run: .github/workflows/scripts/verify-cardano-db-restoration.sh "${{ steps.cardano-db-v2-download.outputs.cmd_output }}"
 
   test-docker:
     strategy:
