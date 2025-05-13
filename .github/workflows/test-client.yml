@@ -40,11 +40,6 @@ on:
         required: false
         type: string
         default: https://raw.githubusercontent.com/input-output-hk/mithril/main/mithril-infra/configuration/pre-release-preview/ancillary.vkey
-      include_ancillary:
-        description: Include ancillary files in the download.
-        required: true
-        type: boolean
-        default: true
       enable_debug:
         description: Enable debug output ("-vvv") for the mithril-client calls
         required: true
@@ -72,9 +67,6 @@ on:
       ancillary_verification_key:
         type: string
         default: https://raw.githubusercontent.com/input-output-hk/mithril/main/mithril-infra/configuration/testing-preview/ancillary.vkey
-      include_ancillary:
-        type: boolean
-        default: true
       enable_debug:
         type: boolean
         default: false
@@ -85,6 +77,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, macos-14, windows-latest]
+        include_ancillary: [true, false]
+
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout sources
@@ -110,7 +104,7 @@ jobs:
           echo "TRANSACTIONS_HASHES_TO_CERTIFY=${{ inputs.transactions_hashes_to_certify }}" >> $GITHUB_ENV
 
           echo "ANCILLARY_VERIFICATION_KEY=$(curl -s ${{ inputs.ancillary_verification_key }})" >> $GITHUB_ENV
-          if [[ "${{ inputs.include_ancillary }}" == "true" ]]; then
+          if [[ "${{ matrix.include_ancillary }}" == "true" ]]; then
             echo "INCLUDE_ANCILLARY=--include-ancillary" >> $GITHUB_OUTPUT
           fi
 
@@ -177,7 +171,7 @@ jobs:
           echo "$OUTPUT" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
-      - name: Cardano Database Snapshot / Verify Cardano database restoration
+      - name: Cardano Database Snapshot / verify Cardano database restoration
         if: runner.os == 'Linux'
         shell: bash
         run: .github/workflows/scripts/verify-cardano-db-restoration.sh "${{ steps.cardano-db-download.outputs.cmd_output }}"
@@ -262,7 +256,7 @@ jobs:
           echo "$OUTPUT" >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
-      - name: Cardano Database V2 Snapshot / Verify Cardano database restoration
+      - name: Cardano Database V2 Snapshot / verify Cardano database restoration
         if: runner.os == 'Linux' && steps.aggregator_capability_unix.outputs.cardano_database_v2_enabled == 'true'
         shell: bash
         run: .github/workflows/scripts/verify-cardano-db-restoration.sh "${{ steps.cardano-db-v2-download.outputs.cmd_output }}"
