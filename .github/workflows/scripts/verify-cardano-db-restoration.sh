@@ -3,14 +3,12 @@
 set -e
 
 if [[ $# -lt 1 ]]; then
-  echo "Usage: $0 '<mithril-client command>'"
+  echo "Usage: $0 '<mithril-client CLI download command output>'"
+  echo "The argument must be the raw output (stdout) of the mithril-client CLI download command."
   exit 1
 fi
 
-CLIENT_CMD="$1"
-
-CLIENT_CMD_OUTPUT=$(eval "$CLIENT_CMD")
-echo "$CLIENT_CMD_OUTPUT"
+CLIENT_CMD_OUTPUT="$1"
 
 DOCKER_CMD=$(echo "$CLIENT_CMD_OUTPUT" | grep -E '^\s*docker run')
 if [[ -n "$DOCKER_CMD" ]]; then
@@ -38,7 +36,7 @@ if [[ -n "$DOCKER_CMD" ]]; then
     echo "Found 'Started opening Immutable DB' in logs."
     exit 0
   else
-    echo "❌ 'Failed to start the Cardano node from the Mithril snapshot."
+    echo "❌ Failed to start the Cardano node from the Mithril snapshot."
     echo "'Started opening Immutable DB' not found within 15 seconds."
     docker logs "$CONTAINER_ID"
     exit 1
