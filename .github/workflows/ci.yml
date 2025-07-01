@@ -30,7 +30,7 @@ jobs:
       - name: Install stable toolchain, tools, and restore cache
         uses: ./.github/workflows/actions/toolchain-and-cache
         with:
-          cache-version: ${{ matrix.os }}-${{ vars.CACHE_VERSION }}
+          cache-version: 22.04-${{ vars.CACHE_VERSION }}
           cargo-tools: cargo-deb
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
