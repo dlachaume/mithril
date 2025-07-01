@@ -62,7 +62,6 @@ jobs:
           if-no-files-found: error
 
       - name: Publish End-to-end runner (${{ runner.os }}-${{ runner.arch }})
-        if: matrix.os == 'ubuntu-22.04'
         uses: actions/upload-artifact@v4
         with:
           name: mithril-tooling-${{ runner.os }}-${{ runner.arch }}
@@ -72,7 +71,6 @@ jobs:
           if-no-files-found: error
 
       - name: Prepare test lab eras
-        if: matrix.os == 'ubuntu-22.04'
         id: eras-test-lab
         run: |
           ERAS=$(./target/release/mithril-aggregator era list --json)
