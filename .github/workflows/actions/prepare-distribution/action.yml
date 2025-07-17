@@ -139,39 +139,31 @@ runs:
         ### Examples of the one line installer
 
         - Download the **latest Mithril signer** in the current directory:
-        ```
-        curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-signer -d latest -p $(pwd)
-        ```
+        \`curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-signer -d latest -p $(pwd)\`
 
         - Download the **latest Mithril client CLI** in the current directory:
-        ```
-        curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-client -d latest -p $(pwd)
-        ```
+        \`curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-client -d latest -p $(pwd)\`
 
         - Download the **unstable Mithril aggregator** in the current directory:
-        ```
-        curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-aggregator -d unstable -p $(pwd)
-        ```
+        \`curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-aggregator -d unstable -p $(pwd)\`
 
         - Download the **Mithril client of distribution `2445.0`** in the current directory:
-        ```
-        curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-client -d 2445.0 -p $(pwd)
-        ```
+        \`curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-client -d 2445.0 -p $(pwd)\`
         EOF
 
-    - name: Create and sign sha256 checksum
-      shell: bash
-      env:
-        GPG_SECRET_KEY: ${{ inputs.gpg-secret-key }}
-      run: ./.github/workflows/scripts/sign-distribution.sh
+    # - name: Create and sign sha256 checksum
+    #   shell: bash
+    #   env:
+    #     GPG_SECRET_KEY: ${{ inputs.gpg-secret-key }}
+    #   run: ./.github/workflows/scripts/sign-distribution.sh
 
-    - name: Create a procedure to verify the distribution
-      shell: bash
-      env:
-        GPG_SECRET_KEY: ${{ inputs.gpg-secret-key }}
-        PROCEDURE_FILE_PATH: ./release-notes-addon.txt
-        DOWNLOAD_URL_BASE: ${{ inputs.download-url-base }}
-      run: ./.github/workflows/scripts/verify-distribution.sh
+    # - name: Create a procedure to verify the distribution
+    #   shell: bash
+    #   env:
+    #     GPG_SECRET_KEY: ${{ inputs.gpg-secret-key }}
+    #     PROCEDURE_FILE_PATH: ./release-notes-addon.txt
+    #     DOWNLOAD_URL_BASE: ${{ inputs.download-url-base }}
+    #   run: ./.github/workflows/scripts/verify-distribution.sh
 
     - name: List packaged assets
       shell: bash
