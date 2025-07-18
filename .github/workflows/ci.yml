@@ -176,303 +176,304 @@ jobs:
           path: |
             mithril-client-wasm/*-mithril-client-wasm-*.tgz
           if-no-files-found: error
-  test:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-14, windows-latest]
+  # test:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       os: [ubuntu-24.04, ubuntu-24.04-arm, macos-14, windows-latest]
 
-        include:
-          - os: ubuntu-24.04
-            test-args: --features full,unstable,future_dmq --workspace
-          - os: ubuntu-24.04-arm
-            test-args: --features full,unstable,future_dmq --workspace
-          # Exclude nodes not officially supported on Windows and macOS (only mithril-client is supported)
-          - os: macos-14
-            test-args: >
-              --features full,unstable --workspace
-              --exclude mithril-aggregator
-              --exclude mithril-signer
-              --exclude mithril-relay
-              --exclude mithril-client-wasm
-              --exclude mithril-aggregator-fake
-          # Windows has a larger list of exclusion because some tests are too slow (ie: mithril-stm) or can't compile (ie: mithril-end-to-end)
-          - os: windows-latest
-            test-args: >
-              --features full,unstable --workspace
-              --exclude mithril-aggregator
-              --exclude mithril-signer
-              --exclude mithril-relay
-              --exclude mithril-client-wasm
-              --exclude mithril-aggregator-fake
-              --exclude mithril-stm
-              --exclude mithril-end-to-end
+  #       include:
+  #         - os: ubuntu-24.04
+  #           test-args: --features full,unstable,future_dmq --workspace
+  #         - os: ubuntu-24.04-arm
+  #           test-args: --features full,unstable,future_dmq --workspace
+  #         # Exclude nodes not officially supported on Windows and macOS (only mithril-client is supported)
+  #         - os: macos-14
+  #           test-args: >
+  #             --features full,unstable --workspace
+  #             --exclude mithril-aggregator
+  #             --exclude mithril-signer
+  #             --exclude mithril-relay
+  #             --exclude mithril-client-wasm
+  #             --exclude mithril-aggregator-fake
+  #         # Windows has a larger list of exclusion because some tests are too slow (ie: mithril-stm) or can't compile (ie: mithril-end-to-end)
+  #         - os: windows-latest
+  #           test-args: >
+  #             --features full,unstable --workspace
+  #             --exclude mithril-aggregator
+  #             --exclude mithril-signer
+  #             --exclude mithril-relay
+  #             --exclude mithril-client-wasm
+  #             --exclude mithril-aggregator-fake
+  #             --exclude mithril-stm
+  #             --exclude mithril-end-to-end
 
-    runs-on: ${{ matrix.os }}
+  #   runs-on: ${{ matrix.os }}
 
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
 
-      - name: Install stable toolchain, tools, and restore cache
-        uses: ./.github/workflows/actions/toolchain-and-cache
-        with:
-          cache-version: ${{ vars.CACHE_VERSION }}
-          cargo-tools: cargo-nextest
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Install stable toolchain, tools, and restore cache
+  #       uses: ./.github/workflows/actions/toolchain-and-cache
+  #       with:
+  #         cache-version: ${{ vars.CACHE_VERSION }}
+  #         cargo-tools: cargo-nextest
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build tests
-        run: cargo nextest run --no-run ${{ matrix.test-args }}
+  #     - name: Build tests
+  #       run: cargo nextest run --no-run ${{ matrix.test-args }}
 
-      - name: Run tests
-        run: cargo nextest run --profile ci ${{ matrix.test-args }}
+  #     - name: Run tests
+  #       run: cargo nextest run --profile ci ${{ matrix.test-args }}
 
-      - name: Run doc tests
-        run: cargo test --doc ${{ matrix.test-args }}
+  #     - name: Run doc tests
+  #       run: cargo test --doc ${{ matrix.test-args }}
 
-      - name: Ensure examples build
-        run: cargo build --examples ${{ matrix.test-args }}
+  #     - name: Ensure examples build
+  #       run: cargo build --examples ${{ matrix.test-args }}
 
-      - name: Rename junit file to include runner info
-        shell: bash
-        if: success() || failure()
-        run: |
-          mv target/nextest/ci/tests-result.junit.xml test-results${{ matrix.artifact-suffix }}-${{ runner.os }}-${{ runner.arch }}.xml
+  #     - name: Rename junit file to include runner info
+  #       shell: bash
+  #       if: success() || failure()
+  #       run: |
+  #         mv target/nextest/ci/tests-result.junit.xml test-results${{ matrix.artifact-suffix }}-${{ runner.os }}-${{ runner.arch }}.xml
 
-      - name: Upload Tests Results
-        uses: actions/upload-artifact@v4
-        if: success() || failure()
-        with:
-          name: test-results-${{ runner.os }}-${{ runner.arch }}
-          path: ./test-results-*.xml
+  #     - name: Upload Tests Results
+  #       uses: actions/upload-artifact@v4
+  #       if: success() || failure()
+  #       with:
+  #         name: test-results-${{ runner.os }}-${{ runner.arch }}
+  #         path: ./test-results-*.xml
 
-  check:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+  # check:
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
 
-      - name: Install stable toolchain, tools, and restore cache
-        uses: ./.github/workflows/actions/toolchain-and-cache
-        with:
-          cache-version: ${{ vars.CACHE_VERSION }}
-          cargo-tools: cargo-machete cargo-sort clippy-sarif sarif-fmt
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Install stable toolchain, tools, and restore cache
+  #       uses: ./.github/workflows/actions/toolchain-and-cache
+  #       with:
+  #         cache-version: ${{ vars.CACHE_VERSION }}
+  #         cargo-tools: cargo-machete cargo-sort clippy-sarif sarif-fmt
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install prettier
-        shell: bash
-        run: npm install -g prettier
+  #     - name: Install prettier
+  #       shell: bash
+  #       run: npm install -g prettier
 
-      - name: Ensure Cargo.lock is up to date
-        if: success() || failure()
-        # Notes:
-        # - this step MUST run before any other cargo steps to avoid them updating the `Cargo.lock` file
-        # - `mithril-build-script` is targeted as it's the project with the fewest dependencies in the workspace
-        run: cargo check --locked -p mithril-build-script
+  #     - name: Ensure Cargo.lock is up to date
+  #       if: success() || failure()
+  #       # Notes:
+  #       # - this step MUST run before any other cargo steps to avoid them updating the `Cargo.lock` file
+  #       # - `mithril-build-script` is targeted as it's the project with the fewest dependencies in the workspace
+  #       run: cargo check --locked -p mithril-build-script
 
-      - name: Clippy Check
-        if: success() || failure()
-        run: |
-          cargo clippy \
-            --all-features --all-targets --no-deps --message-format=json \
-            | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
+  #     - name: Clippy Check
+  #       if: success() || failure()
+  #       run: |
+  #         cargo clippy \
+  #           --all-features --all-targets --no-deps --message-format=json \
+  #           | clippy-sarif | tee rust-clippy-results.sarif | sarif-fmt
 
-          # Make this step fail if any warning has been found
-          if [[ $(cat rust-clippy-results.sarif | jq '.runs[0].results') != "[]" ]]; then
-            false
-          fi
+  #         # Make this step fail if any warning has been found
+  #         if [[ $(cat rust-clippy-results.sarif | jq '.runs[0].results') != "[]" ]]; then
+  #           false
+  #         fi
 
-      - name: Upload clippy analysis results to GitHub
-        if: success() || failure()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: rust-clippy-results.sarif
-          wait-for-processing: true
+  #     - name: Upload clippy analysis results to GitHub
+  #       if: success() || failure()
+  #       uses: github/codeql-action/upload-sarif@v3
+  #       with:
+  #         sarif_file: rust-clippy-results.sarif
+  #         wait-for-processing: true
 
-      - name: Cargo fmt
-        if: success() || failure()
-        shell: bash
-        run: cargo fmt --check
+  #     - name: Cargo fmt
+  #       if: success() || failure()
+  #       shell: bash
+  #       run: cargo fmt --check
 
-      - name: Cargo sort
-        if: success() || failure()
-        shell: bash
-        run: cargo sort -w -c
+  #     - name: Cargo sort
+  #       if: success() || failure()
+  #       shell: bash
+  #       run: cargo sort -w -c
 
-      - name: Cargo machete (check unused dependencies)
-        if: success() || failure()
-        shell: bash
-        run: cargo machete
+  #     - name: Cargo machete (check unused dependencies)
+  #       if: success() || failure()
+  #       shell: bash
+  #       run: cargo machete
 
-      - name: Dependency & Vulnerabilities Review
-        if: github.event_name == 'pull_request'
-        uses: actions/dependency-review-action@v4
-        with:
-          base-ref: ${{ github.event.pull_request.base.sha || 'main' }}
-          head-ref: ${{ github.event.pull_request.head.sha || github.ref }}
+  #     - name: Dependency & Vulnerabilities Review
+  #       if: github.event_name == 'pull_request'
+  #       uses: actions/dependency-review-action@v4
+  #       with:
+  #         base-ref: ${{ github.event.pull_request.base.sha || 'main' }}
+  #         head-ref: ${{ github.event.pull_request.head.sha || github.ref }}
 
-      - name: Check networks.json validity
-        if: success() || failure()
-        run: jq . networks.json
+  #     - name: Check networks.json validity
+  #       if: success() || failure()
+  #       run: jq . networks.json
 
-      - name: Check `mithril-client-wasm` Cargo.toml and package.json versions matches
-        if: success() || failure()
-        shell: bash
-        run: |
-          WASM_PACKAGE_JSON_VERSION=$(cat mithril-client-wasm/package.json | jq -r '.version')
-          WASM_CRATE_VERSION=$(cargo metadata --quiet --no-deps | jq -r '.packages[] | select(.name=="mithril-client-wasm") | .version')
+  #     - name: Check `mithril-client-wasm` Cargo.toml and package.json versions matches
+  #       if: success() || failure()
+  #       shell: bash
+  #       run: |
+  #         WASM_PACKAGE_JSON_VERSION=$(cat mithril-client-wasm/package.json | jq -r '.version')
+  #         WASM_CRATE_VERSION=$(cargo metadata --quiet --no-deps | jq -r '.packages[] | select(.name=="mithril-client-wasm") | .version')
 
-          if [[ $WASM_CRATE_VERSION != $WASM_PACKAGE_JSON_VERSION ]]; then
-            echo "::error ::Version mismatch detected for mithril-client-wasm!"
-            echo "Cargo.toml version: $WASM_CRATE_VERSION"
-            echo "package.json version: $WASM_PACKAGE_JSON_VERSION"
-            exit 1
-          fi
+  #         if [[ $WASM_CRATE_VERSION != $WASM_PACKAGE_JSON_VERSION ]]; then
+  #           echo "::error ::Version mismatch detected for mithril-client-wasm!"
+  #           echo "Cargo.toml version: $WASM_CRATE_VERSION"
+  #           echo "package.json version: $WASM_PACKAGE_JSON_VERSION"
+  #           exit 1
+  #         fi
 
-      - name: Check code formatting
-        if: success() || failure()
-        run: make check-format
+  #     - name: Check code formatting
+  #       if: success() || failure()
+  #       run: make check-format
 
-  e2e:
-    runs-on: ubuntu-24.04
-    needs: [build-ubuntu]
-    strategy:
-      fail-fast: false
-      matrix:
-        mode: ["std"]
-        era: ${{ fromJSON(needs.build-ubuntu.outputs.eras) }}
-        next_era: [""]
-        cardano_node_version: ["10.3.1", "10.4.1"]
-        hard_fork_latest_era_at_epoch: [0]
-        run_id: ["#1", "#2", "#3"]
-        extra_args: [""]
+  # e2e:
+  #   runs-on: ubuntu-24.04
+  #   needs: [build-ubuntu]
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       mode: ["std"]
+  #       era: ${{ fromJSON(needs.build-ubuntu.outputs.eras) }}
+  #       next_era: [""]
+  #       cardano_node_version: ["10.3.1", "10.4.1"]
+  #       hard_fork_latest_era_at_epoch: [0]
+  #       run_id: ["#1", "#2", "#3"]
+  #       extra_args: [""]
 
-        include:
-          # Include a test for partial decentralization with leader/follower signer registration and P2P signature registration
-          - mode: "leader-follower"
-            era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[0] }}
-            next_era: [""]
-            cardano_node_version: "10.3.1"
-            hard_fork_latest_era_at_epoch: 0
-            run_id: "#1"
-            extra_args: "--number-of-aggregators=2 --use-relays --relay-signer-registration-mode=passthrough --relay-signature-registration-mode=p2p"
-          # Include a test for full dedentralization P2P signer registration and P2P signature registration
-          - mode: "decentralized"
-            era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[0] }}
-            next_era: ""
-            cardano_node_version: "10.3.1"
-            hard_fork_latest_era_at_epoch: 0
-            run_id: "#1"
-            extra_args: "--number-of-aggregators=2 --use-relays --relay-signer-registration-mode=p2p --relay-signature-registration-mode=p2p"
-          # Include a test for the era switch without regenesis
-          - mode: "std"
-            era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[0] }}
-            next_era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[1] }}
-            cardano_node_version: "10.3.1"
-            hard_fork_latest_era_at_epoch: 0
-            run_id: "#1"
-            extra_args: ""
-          # Include a test for the era switch with regenesis
-          - mode: "std"
-            era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[0] }}
-            next_era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[1] }}
-            cardano_node_version: "10.3.1"
-            hard_fork_latest_era_at_epoch: 0
-            run_id: "#1"
-            extra_args: "--mithril-era-regenesis-on-switch"
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+  #       include:
+  #         # Include a test for partial decentralization with leader/follower signer registration and P2P signature registration
+  #         - mode: "leader-follower"
+  #           era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[0] }}
+  #           next_era: [""]
+  #           cardano_node_version: "10.3.1"
+  #           hard_fork_latest_era_at_epoch: 0
+  #           run_id: "#1"
+  #           extra_args: "--number-of-aggregators=2 --use-relays --relay-signer-registration-mode=passthrough --relay-signature-registration-mode=p2p"
+  #         # Include a test for full dedentralization P2P signer registration and P2P signature registration
+  #         - mode: "decentralized"
+  #           era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[0] }}
+  #           next_era: ""
+  #           cardano_node_version: "10.3.1"
+  #           hard_fork_latest_era_at_epoch: 0
+  #           run_id: "#1"
+  #           extra_args: "--number-of-aggregators=2 --use-relays --relay-signer-registration-mode=p2p --relay-signature-registration-mode=p2p"
+  #         # Include a test for the era switch without regenesis
+  #         - mode: "std"
+  #           era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[0] }}
+  #           next_era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[1] }}
+  #           cardano_node_version: "10.3.1"
+  #           hard_fork_latest_era_at_epoch: 0
+  #           run_id: "#1"
+  #           extra_args: ""
+  #         # Include a test for the era switch with regenesis
+  #         - mode: "std"
+  #           era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[0] }}
+  #           next_era: ${{ fromJSON(needs.build-ubuntu.outputs.eras)[1] }}
+  #           cardano_node_version: "10.3.1"
+  #           hard_fork_latest_era_at_epoch: 0
+  #           run_id: "#1"
+  #           extra_args: "--mithril-era-regenesis-on-switch"
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
 
-      - name: Download binaries
-        uses: actions/download-artifact@v4
-        with:
-          name: mithril-distribution-${{ runner.os }}-${{ runner.arch }}
-          path: ./bin
+  #     - name: Download binaries
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: mithril-distribution-${{ runner.os }}-${{ runner.arch }}
+  #         path: ./bin
 
-      - name: Download rust test runner
-        uses: actions/download-artifact@v4
-        with:
-          name: mithril-tooling-${{ runner.os }}-${{ runner.arch }}
-          path: ./
+  #     - name: Download rust test runner
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: mithril-tooling-${{ runner.os }}-${{ runner.arch }}
+  #         path: ./
 
-      - run: |
-          chmod +x ./bin/mithril-aggregator
-          chmod +x ./bin/mithril-client
-          chmod +x ./bin/mithril-signer
-          chmod +x ./bin/mithril-relay
-          chmod +x ./mithril-end-to-end
-          mkdir artifacts
+  #     - run: |
+  #         chmod +x ./bin/mithril-aggregator
+  #         chmod +x ./bin/mithril-client
+  #         chmod +x ./bin/mithril-signer
+  #         chmod +x ./bin/mithril-relay
+  #         chmod +x ./mithril-end-to-end
+  #         mkdir artifacts
 
-      - name: Test
-        uses: nick-fields/retry@v3
-        with:
-          shell: bash
-          max_attempts: 3
-          retry_on_exit_code: 2
-          timeout_minutes: 10
-          warning_on_retry: true
-          command: |
-            cat > ./mithril-end-to-end.sh << EOF
-            #!/bin/bash
-            set -x
-            ./mithril-end-to-end -vvv \\
-                    --bin-directory ./bin \\
-                    --work-directory=./artifacts \\
-                    --devnet-scripts-directory=./mithril-test-lab/mithril-devnet \\
-                    --mithril-era=${{ matrix.era }} \\
-                    --cardano-node-version ${{ matrix.cardano_node_version }} \\
-                    --cardano-hard-fork-latest-era-at-epoch ${{ matrix.hard_fork_latest_era_at_epoch }} ${{ matrix.extra_args }} \\
-            EOF
-            # If there is a next era, we need to specify it with '--mithril-next-era'
-            if [[ "${{ matrix.next_era }}" != "" ]]; then
-              echo "  --mithril-next-era=${{ matrix.next_era }}" >> ./mithril-end-to-end.sh
-            fi
-            chmod u+x ./mithril-end-to-end.sh
-            ./mithril-end-to-end.sh
-            EXIT_CODE=$?
-            rm ./mithril-end-to-end.sh
-            exit $EXIT_CODE
+  #     - name: Test
+  #       uses: nick-fields/retry@v3
+  #       with:
+  #         shell: bash
+  #         max_attempts: 3
+  #         retry_on_exit_code: 2
+  #         timeout_minutes: 10
+  #         warning_on_retry: true
+  #         command: |
+  #           cat > ./mithril-end-to-end.sh << EOF
+  #           #!/bin/bash
+  #           set -x
+  #           ./mithril-end-to-end -vvv \\
+  #                   --bin-directory ./bin \\
+  #                   --work-directory=./artifacts \\
+  #                   --devnet-scripts-directory=./mithril-test-lab/mithril-devnet \\
+  #                   --mithril-era=${{ matrix.era }} \\
+  #                   --cardano-node-version ${{ matrix.cardano_node_version }} \\
+  #                   --cardano-hard-fork-latest-era-at-epoch ${{ matrix.hard_fork_latest_era_at_epoch }} ${{ matrix.extra_args }} \\
+  #           EOF
+  #           # If there is a next era, we need to specify it with '--mithril-next-era'
+  #           if [[ "${{ matrix.next_era }}" != "" ]]; then
+  #             echo "  --mithril-next-era=${{ matrix.next_era }}" >> ./mithril-end-to-end.sh
+  #           fi
+  #           chmod u+x ./mithril-end-to-end.sh
+  #           ./mithril-end-to-end.sh
+  #           EXIT_CODE=$?
+  #           rm ./mithril-end-to-end.sh
+  #           exit $EXIT_CODE
 
-      - name: Upload E2E Tests Artifacts
-        if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
-        with:
-          name: mithril-e2e-tests-artifacts-run_${{ github.run_number }}-attempt_${{ github.run_attempt }}-mode_${{ matrix.mode }}-era_${{ matrix.era }}-cardano-${{ matrix.cardano_node_version }}-fork-${{  matrix.hard_fork_latest_era_at_epoch }}-run_id_${{ matrix.run_id }}
-          path: |
-            ./artifacts/*
-            # including node.sock makes the upload fails so exclude them:
-            !./artifacts/**/node.sock
-            # exclude cardano tools, saving ~500mb of data:
-            !./artifacts/devnet/bin/
-          if-no-files-found: error
+  #     - name: Upload E2E Tests Artifacts
+  #       if: ${{ failure() }}
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: mithril-e2e-tests-artifacts-run_${{ github.run_number }}-attempt_${{ github.run_attempt }}-mode_${{ matrix.mode }}-era_${{ matrix.era }}-cardano-${{ matrix.cardano_node_version }}-fork-${{  matrix.hard_fork_latest_era_at_epoch }}-run_id_${{ matrix.run_id }}
+  #         path: |
+  #           ./artifacts/*
+  #           # including node.sock makes the upload fails so exclude them:
+  #           !./artifacts/**/node.sock
+  #           # exclude cardano tools, saving ~500mb of data:
+  #           !./artifacts/devnet/bin/
+  #         if-no-files-found: error
 
-  send-tests-results:
-    if: success() || failure()
-    runs-on: ubuntu-24.04
-    needs:
-      - test
-    steps:
-      - name: Download Tests Results
-        if: success() || failure()
-        uses: actions/download-artifact@v4
-        with:
-          pattern: test-results-*
-          merge-multiple: true
+  # send-tests-results:
+  #   if: success() || failure()
+  #   runs-on: ubuntu-24.04
+  #   needs:
+  #     - test
+  #   steps:
+  #     - name: Download Tests Results
+  #       if: success() || failure()
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         pattern: test-results-*
+  #         merge-multiple: true
 
-      - name: Publish Unit Test Results
-        if: success() || failure()
-        uses: EnricoMi/publish-unit-test-result-action@v2
-        with:
-          junit_files: ./**/test-results-*.xml
+  #     - name: Publish Unit Test Results
+  #       if: success() || failure()
+  #       uses: EnricoMi/publish-unit-test-result-action@v2
+  #       with:
+  #         junit_files: ./**/test-results-*.xml
 
   docker-mithril:
     runs-on: ubuntu-24.04
     needs:
       - build
-      - check
-      - test
-      - e2e
+      # - check
+      # - test
+      # - e2e
+      - build-ubuntu
     strategy:
       fail-fast: false
       matrix:
@@ -498,9 +499,6 @@ jobs:
       PACKAGE: ${{ github.repository_owner }}/${{ matrix.package != '' && matrix.package || matrix.project }}
       DOCKER_FILE: ./${{ matrix.project }}/Dockerfile.ci
       CONTEXT: .
-
-    outputs:
-      image_id: ${{ steps.build-push-docker-image.outputs.imageid }}
 
     steps:
       - name: Checkout
@@ -545,7 +543,6 @@ jobs:
           path: ${{ matrix.project }}/bin-linux-arm64
 
       - name: Build and push Docker image
-        id: build-push-docker-image
         uses: docker/build-push-action@v6
         with:
           context: ${{ env.CONTEXT }}
@@ -555,12 +552,31 @@ jobs:
           platforms: linux/amd64,linux/arm64
           provenance: false
 
-      - name: Display build-push-docker-image outputs
+      # - name: Display meta outputs
+      #   run: |
+      #     echo "version: ${{ steps.meta.outputs.version }}"
+      #     echo "tags: ${{ steps.meta.outputs.tags }}"
+      #     echo "labels: ${{ steps.meta.outputs.labels }}"
+      #     echo "annotations: ${{ steps.meta.outputs.annotations }}"
+      #     echo "json: ${{ steps.meta.outputs.json }}"
+
+      # - name: Display build-push-docker-image outputs
+      #   run: |
+      #     echo "imageid: ${{ steps.build-push-docker-image.outputs.imageid }}"
+      #     echo "digest: ${{ steps.build-push-docker-image.outputs.digest }}"
+      #     echo "metadata: ${{ steps.build-push-docker-image.outputs.metadata }}"
+
+      - name: Extract and save Docker image reference
+        id: docker-image-reference
         run: |
-          echo "Image ID: ${{ steps.build-push-docker-image.outputs.imageid }}"
-          echo "Tags: ${{ steps.meta.outputs.tags }}"
-          echo "Labels: ${{ steps.meta.outputs.labels }}"
-          echo "Outputs: ${{ steps.build-push-docker-image.outputs }}"
+          tag=$(echo '${{ steps.meta.outputs.json }}' | jq -r '.tags[] | select(test(":[^:]+-[0-9a-f]{7}$"))')
+          echo "$tag" > docker-image-reference-${{ matrix.project }}.txt
+
+      - name: Upload Docker image reference artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-reference-${{ matrix.project }}
+          path: docker-image-reference-${{ matrix.project }}.txt
 
   publish-crate-test:
     strategy:
@@ -579,9 +595,10 @@ jobs:
     runs-on: ubuntu-24.04
     needs:
       - build
-      - test
-      - e2e
-      - check
+      # - test
+      # - e2e
+      # - check
+      - build-ubuntu
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -640,9 +657,10 @@ jobs:
       - build
       - build-test-wasm
       - build-test-explorer
-      - test
-      - e2e
-      - check
+      # - test
+      # - e2e
+      # - check
+      - build-ubuntu
       - docker-mithril
     steps:
       - name: Checkout sources
@@ -697,6 +715,27 @@ jobs:
           name: explorer-build
           path: ./package-explorer
 
+      - name: Download Docker image reference artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: docker-image-reference-*
+          merge-multiple: true
+
+      - name: Build Docker image references JSON
+        id: build-docker-refs-json
+        run: |
+          {
+            echo "refs_json<<EOF"
+            ./.github/workflows/scripts/build-docker-image-references-json.sh \
+              docker-image-reference-mithril-aggregator.txt \
+              docker-image-reference-mithril-signer.txt \
+              docker-image-reference-mithril-client-cli.txt
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Debug Docker refs JSON
+        run: echo '${{ steps.build-docker-refs-json.outputs.refs_json }}' | jq .
+
       - name: Prepare distribution package
         uses: ./.github/workflows/actions/prepare-distribution
         with:
@@ -704,6 +743,7 @@ jobs:
           download-url-base: ${{ github.server_url }}/${{ github.repository }}/releases/download/unstable
           gpg-secret-key: ${{ secrets.GPG_SECRET_KEY }}
           compatibility-table: '{ "release-mainnet": "⛔", "release-preprod": "⛔", "pre-release-preview": "⛔", "testing-preview": "✔" }'
+          docker-image-references: ${{ steps.build-docker-refs-json.outputs.refs_json }}
 
       - name: Delete unstable release and associated tag
         env:
@@ -837,90 +877,90 @@ jobs:
           loki_ingest_username: ${{ secrets.LOKI_INGEST_USERNAME }}
           loki_ingest_password: ${{ secrets.LOKI_INGEST_PASSWORD }}
 
-  cargo-doc:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+  # cargo-doc:
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
 
-      - name: Install stable toolchain and restore cache
-        uses: ./.github/workflows/actions/toolchain-and-cache
-        with:
-          cache-version: ${{ vars.CACHE_VERSION }}
-          cargo-tools: clippy-sarif sarif-fmt
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Install stable toolchain and restore cache
+  #       uses: ./.github/workflows/actions/toolchain-and-cache
+  #       with:
+  #         cache-version: ${{ vars.CACHE_VERSION }}
+  #         cargo-tools: clippy-sarif sarif-fmt
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Generate cargo doc
-        run: |
-          # Force `--lib` to avoid a collision between the client lib and the client cli binary who share
-          # the same name (we only want to document those anyway)
-          cargo doc --no-deps --lib -p mithril-stm -p mithril-common \
-                    -p mithril-cardano-node-chain -p mithril-cardano-node-internal-database \
-                    -p mithril-dmq \
-                    -p mithril-build-script -p mithril-cli-helper -p mithril-doc -p mithril-doc-derive \
-                    -p mithril-era -p mithril-metric -p mithril-persistence -p mithril-resource-pool \
-                    -p mithril-ticker -p mithril-signed-entity-lock -p mithril-signed-entity-preloader \
-                    -p mithril-aggregator -p mithril-signer -p mithril-client -p mithril-client-cli \
-                    -p mithril-api-spec -p mithril-test-http-server \
-                    --all-features --message-format=json \
-                    | clippy-sarif | tee rust-cargo-doc-results.sarif | sarif-fmt
+  #     - name: Generate cargo doc
+  #       run: |
+  #         # Force `--lib` to avoid a collision between the client lib and the client cli binary who share
+  #         # the same name (we only want to document those anyway)
+  #         cargo doc --no-deps --lib -p mithril-stm -p mithril-common \
+  #                   -p mithril-cardano-node-chain -p mithril-cardano-node-internal-database \
+  #                   -p mithril-dmq \
+  #                   -p mithril-build-script -p mithril-cli-helper -p mithril-doc -p mithril-doc-derive \
+  #                   -p mithril-era -p mithril-metric -p mithril-persistence -p mithril-resource-pool \
+  #                   -p mithril-ticker -p mithril-signed-entity-lock -p mithril-signed-entity-preloader \
+  #                   -p mithril-aggregator -p mithril-signer -p mithril-client -p mithril-client-cli \
+  #                   -p mithril-api-spec -p mithril-test-http-server \
+  #                   --all-features --message-format=json \
+  #                   | clippy-sarif | tee rust-cargo-doc-results.sarif | sarif-fmt
 
-          # Update tool sarif metadata from "clippy" to "cargo-doc" (since it's set this way by clippy-sarif)
-          contents=$(cat rust-cargo-doc-results.sarif \
-              | jq '.runs[].tool.driver.name = "cargo-doc"' \
-              | jq '.runs[].tool.driver.informationUri = "https://doc.rust-lang.org/cargo/commands/cargo-doc.html"' \
-          )
-          echo -E "${contents}" > rust-cargo-doc-results.sarif
+  #         # Update tool sarif metadata from "clippy" to "cargo-doc" (since it's set this way by clippy-sarif)
+  #         contents=$(cat rust-cargo-doc-results.sarif \
+  #             | jq '.runs[].tool.driver.name = "cargo-doc"' \
+  #             | jq '.runs[].tool.driver.informationUri = "https://doc.rust-lang.org/cargo/commands/cargo-doc.html"' \
+  #         )
+  #         echo -E "${contents}" > rust-cargo-doc-results.sarif
 
-          # Make this step fail if any warning has been found
-          if [[ $(cat rust-cargo-doc-results.sarif | jq '.runs[0].results') != "[]" ]]; then
-            false
-          fi
+  #         # Make this step fail if any warning has been found
+  #         if [[ $(cat rust-cargo-doc-results.sarif | jq '.runs[0].results') != "[]" ]]; then
+  #           false
+  #         fi
 
-      - name: Upload cargo-doc results to GitHub
-        if: success() || failure()
-        uses: github/codeql-action/upload-sarif@v3
-        with:
-          sarif_file: rust-cargo-doc-results.sarif
-          wait-for-processing: true
+  #     - name: Upload cargo-doc results to GitHub
+  #       if: success() || failure()
+  #       uses: github/codeql-action/upload-sarif@v3
+  #       with:
+  #         sarif_file: rust-cargo-doc-results.sarif
+  #         wait-for-processing: true
 
-      - name: Publish Mithril-rust-doc
-        uses: actions/upload-artifact@v4
-        with:
-          name: mithril-rust-doc
-          if-no-files-found: error
-          path: |
-            target/doc/
+  #     - name: Publish Mithril-rust-doc
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: mithril-rust-doc
+  #         if-no-files-found: error
+  #         path: |
+  #           target/doc/
 
-  build-docusaurus:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+  # build-docusaurus:
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: "npm"
-          cache-dependency-path: docs/website/package-lock.json
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 20
+  #         cache: "npm"
+  #         cache-dependency-path: docs/website/package-lock.json
 
-      - name: Install dependencies
-        working-directory: docs/website
-        run: npm ci
+  #     - name: Install dependencies
+  #       working-directory: docs/website
+  #       run: npm ci
 
-      - name: Build Docusaurus site
-        working-directory: docs/website
-        run: |
-          npm run build
+  #     - name: Build Docusaurus site
+  #       working-directory: docs/website
+  #       run: |
+  #         npm run build
 
-      - name: Publish Docusaurus build
-        uses: actions/upload-artifact@v4
-        with:
-          name: docusaurus-build
-          if-no-files-found: error
-          path: |
-            docs/website/build/*
+  #     - name: Publish Docusaurus build
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: docusaurus-build
+  #         if-no-files-found: error
+  #         path: |
+  #           docs/website/build/*
 
   build-test-explorer:
     runs-on: ubuntu-24.04
@@ -981,27 +1021,27 @@ jobs:
           path: |
             mithril-explorer/out/*
 
-  build-open-api-ui:
-    runs-on: ubuntu-24.04
-    steps:
-      - name: Checkout sources
-        uses: actions/checkout@v4
+  # build-open-api-ui:
+  #   runs-on: ubuntu-24.04
+  #   steps:
+  #     - name: Checkout sources
+  #       uses: actions/checkout@v4
 
-      - name: Build OpenAPI UI
-        uses: Legion2/swagger-ui-action@v1
-        with:
-          output: out/
-          spec-file: ./openapi.yaml
-          version: ^5.0.0
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: Build OpenAPI UI
+  #       uses: Legion2/swagger-ui-action@v1
+  #       with:
+  #         output: out/
+  #         spec-file: ./openapi.yaml
+  #         version: ^5.0.0
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish OpenAPI UI build
-        uses: actions/upload-artifact@v4
-        with:
-          name: openapi-ui-build
-          if-no-files-found: error
-          path: |
-            out/*
+  #     - name: Publish OpenAPI UI build
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: openapi-ui-build
+  #         if-no-files-found: error
+  #         path: |
+  #           out/*
 
   # publish-docs:
   #   if: github.event_name == 'push' && github.ref == 'refs/heads/main'

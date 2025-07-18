@@ -9,6 +9,8 @@ on:
 jobs:
   create-pre-release:
     runs-on: ubuntu-24.04
+    needs:
+      - build-push-docker
     permissions:
       contents: write
     steps:
@@ -85,6 +87,27 @@ jobs:
         run: |
           echo ${{ github.ref_name }} >> ./package/VERSION
 
+      - name: Download Docker image reference artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: docker-image-reference-*
+          merge-multiple: true
+
+      - name: Build Docker image references JSON
+        id: build-docker-refs-json
+        run: |
+          {
+            echo "refs_json<<EOF"
+            ./.github/workflows/scripts/build-docker-image-references-json.sh \
+              docker-image-reference-mithril-aggregator.txt \
+              docker-image-reference-mithril-signer.txt \
+              docker-image-reference-mithril-client-cli.txt
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Debug Docker refs JSON
+        run: echo '${{ steps.build-docker-refs-json.outputs.refs_json }}' | jq .
+
       - name: Prepare distribution package
         uses: ./.github/workflows/actions/prepare-distribution
         with:
@@ -92,6 +115,7 @@ jobs:
           download-url-base: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}
           gpg-secret-key: ${{ secrets.GPG_SECRET_KEY }}
           compatibility-table: '{ "release-mainnet": "⛔", "release-preprod": "⛔", "pre-release-preview": "✔", "testing-preview": "⛔" }'
+          docker-image-references: ${{ steps.build-docker-refs-json.outputs.refs_json }}
 
       - name: Create pre-release ${{ github.ref_name }}
         uses: softprops/action-gh-release@v2
@@ -183,6 +207,18 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           platforms: linux/amd64,linux/arm64
           provenance: false
+
+      - name: Extract and save Docker image reference
+        id: docker-image-reference
+        run: |
+          tag=$(echo '${{ steps.meta.outputs.json }}' | jq -r '.tags[] | select(test(":[^:]+-[0-9a-f]{7}$"))')
+          echo "$tag" > docker-image-reference-${{ matrix.project }}.txt
+
+      - name: Upload Docker image reference artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-image-reference-${{ matrix.project }}
+          path: docker-image-reference-${{ matrix.project }}.txt
 
   deploy-pre-release:
     strategy:
