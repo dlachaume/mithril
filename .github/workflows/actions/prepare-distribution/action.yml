@@ -132,7 +132,7 @@ runs:
       run: |
         cat >> ./release-notes-addon.txt << EOF
 
-        ## One line installer for Mithril binaries
+        ## Download a binary asset
         To simplify the installation and updating of Mithril binaries, we have created a one line installer that downloads and installs the Mithril binaries for you.
         This installer is available for Linux and macOS and supports the Mithril signer, Mithril aggregator, and Mithril client CLI.
 
@@ -164,6 +164,21 @@ runs:
     #     PROCEDURE_FILE_PATH: ./release-notes-addon.txt
     #     DOWNLOAD_URL_BASE: ${{ inputs.download-url-base }}
     #   run: ./.github/workflows/scripts/verify-distribution.sh
+
+    - name: Download a Docker image
+      shell: bash
+      run: |
+        cat >> ./release-notes-addon.txt << EOF
+
+        ## Download a Docker image
+        You can directly pull prebuilt Mithril Docker images:
+
+        | Docker image       | name      | URL         |
+        | ------------------ | :-------: | :---------: |
+        | mithril-aggregator |     ✔     |   ghcr.io/input-output-hk/mithril-aggregator:    |
+        | mithril-signer     |     ✔     |   ghcr.io/input-output-hk/mithril-signer:    |
+        | mithril-client     |     ✔     |   ghcr.io/input-output-hk/mithril-client:    |
+        EOF
 
     - name: List packaged assets
       shell: bash
