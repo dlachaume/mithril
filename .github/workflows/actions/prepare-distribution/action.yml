@@ -173,11 +173,11 @@ runs:
         ## Download a Docker image
         You can directly pull prebuilt Mithril Docker images:
 
-        | Docker image       | name      | URL         |
-        | ------------------ | :-------: | :---------: |
-        | mithril-aggregator |     ✔     |   ghcr.io/input-output-hk/mithril-aggregator:    |
-        | mithril-signer     |     ✔     |   ghcr.io/input-output-hk/mithril-signer:    |
-        | mithril-client     |     ✔     |   ghcr.io/input-output-hk/mithril-client:    |
+        | Binary             |           Image name            |                           URL                           |
+        | ------------------ | :-----------------------------: | :-----------------------------------------------------: |
+        | mithril-aggregator | mithril-aggregator:main-aa9dc3f | ghcr.io/input-output-hk/mithril-aggregator:main-aa9dc3f |
+        | mithril-signer     |   mithril-signer:main-aa9dc3f   |   ghcr.io/input-output-hk/mithril-signer:main-aa9dc3f   |
+        | mithril-client     |   mithril-client:main-aa9dc3f   |   ghcr.io/input-output-hk/mithril-client:main-aa9dc3f   |
         EOF
 
     - name: List packaged assets
