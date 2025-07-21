@@ -17,6 +17,9 @@ inputs:
   compatibility-table:
     description: A json in which each key corresponds to a network and each value describes its compatibility
     required: true
+  docker-image-references:
+    description: JSON mapping project names to full Docker image references
+    required: true
 runs:
   using: "composite"
   steps:
@@ -164,6 +167,26 @@ runs:
     #     PROCEDURE_FILE_PATH: ./release-notes-addon.txt
     #     DOWNLOAD_URL_BASE: ${{ inputs.download-url-base }}
     #   run: ./.github/workflows/scripts/verify-distribution.sh
+
+    - name: Download a Docker image
+      shell: bash
+      run: |
+        cat >> ./release-notes-addon.txt << EOF
+
+        ## Download a Docker image
+        You can directly pull prebuilt Mithril Docker images:
+
+        | Binary | Image name | URL |
+        | ------ | :--------: | :-: |
+        EOF
+
+        echo '${{ inputs.docker-image-references }}' \
+          | jq -r 'to_entries[] | 
+            "\(.key) \(.value)"' \
+          | while read -r binary ref; do
+              image_name="$(echo "$ref" | awk -F/ '{print $NF}')"
+              echo "| $binary | $image_name | $ref |" >> ./release-notes-addon.txt
+            done
 
     - name: List packaged assets
       shell: bash
