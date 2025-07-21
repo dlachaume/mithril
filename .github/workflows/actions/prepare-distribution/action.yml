@@ -21,10 +21,12 @@ runs:
   using: "composite"
   steps:
     - name: Get short SHA
+      shell: bash
       id: slug
       run: echo "sha8=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
 
     - name: Compute version name
+      shell: bash
       id: compute-version-name
       run: |
         if [[ "${{ inputs.tag }}" == "unstable" ]]; then
@@ -151,17 +153,14 @@ runs:
 
         ### Examples of the one line installer
 
-        - Download the **latest Mithril signer** in the current directory:
-        \`curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-signer -d latest -p $(pwd)\`
+        - Download the **Mithril signer** in the current directory:
+        \`curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-signer -d ${{ inputs.tag }} -p $(pwd)\`
 
-        - Download the **latest Mithril client CLI** in the current directory:
-        \`curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-client -d latest -p $(pwd)\`
+        - Download the **Mithril client CLI** in the current directory:
+        \`curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-client -d ${{ inputs.tag }} -p $(pwd)\`
 
-        - Download the **unstable Mithril aggregator** in the current directory:
-        \`curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-aggregator -d unstable -p $(pwd)\`
-
-        - Download the **Mithril client of distribution `2445.0`** in the current directory:
-        \`curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-client -d 2445.0 -p $(pwd)\`
+        - Download the **Mithril aggregator** in the current directory:
+        \`curl --proto '=https' --tlsv1.2 -sSf https://raw.githubusercontent.com/input-output-hk/mithril/refs/heads/main/mithril-install.sh | sh -s -- -c mithril-aggregator -d ${{ inputs.tag }} -p $(pwd)\`
         EOF
 
     # - name: Create and sign sha256 checksum
@@ -181,7 +180,11 @@ runs:
     - name: Download a Docker image
       shell: bash
       run: |
-        MITHRIL_IMAGE_ID="${{ steps.compute-version-name.outputs.version-name }}"
+        if [[ "${{ inputs.tag }}" == "unstable" ]]; then
+          MITHRIL_IMAGE_ID="main-${{ steps.slug.outputs.sha8 }}"
+        else
+          MITHRIL_IMAGE_ID="${{ inputs.tag }}-${{ steps.slug.outputs.sha8 }}"
+        fi
 
         cat >> ./release-notes-addon.txt << EOF
 

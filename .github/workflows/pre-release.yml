@@ -92,7 +92,6 @@ jobs:
           download-url-base: ${{ github.server_url }}/${{ github.repository }}/releases/download/${{ github.ref_name }}
           gpg-secret-key: ${{ secrets.GPG_SECRET_KEY }}
           compatibility-table: '{ "release-mainnet": "⛔", "release-preprod": "⛔", "pre-release-preview": "✔", "testing-preview": "⛔" }'
-          docker-image-references: ${{ steps.build-docker-refs-json.outputs.refs_json }}
 
       - name: Create pre-release ${{ github.ref_name }}
         uses: softprops/action-gh-release@v2
