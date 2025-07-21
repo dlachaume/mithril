@@ -551,18 +551,6 @@ jobs:
           platforms: linux/amd64,linux/arm64
           provenance: false
 
-      - name: Extract and save the Docker image reference with short SHA
-        id: docker-image-reference
-        run: |
-          docker_image_reference=$(echo '${{ steps.meta.outputs.json }}' | jq -r '.tags[] | select(test(":[^:]+-[0-9a-f]{7}$"))')
-          echo "$docker_image_reference" > docker-image-reference-${{ matrix.project }}.txt
-
-      - name: Upload Docker image reference artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-image-reference-${{ matrix.project }}
-          path: docker-image-reference-${{ matrix.project }}.txt
-
   publish-crate-test:
     strategy:
       fail-fast: false
@@ -644,7 +632,6 @@ jobs:
       - test
       - e2e
       - check
-      - docker-mithril
     steps:
       - name: Checkout sources
         uses: actions/checkout@v4
@@ -698,32 +685,13 @@ jobs:
           name: explorer-build
           path: ./package-explorer
 
-      - name: Download Docker image reference artifacts
-        uses: actions/download-artifact@v4
-        with:
-          pattern: docker-image-reference-*
-          merge-multiple: true
-
-      - name: Create Docker image references JSON
-        id: build-docker-refs-json
-        run: |
-          {
-            echo "refs_json<<EOF"
-            ./.github/workflows/scripts/build-docker-image-references-json.sh \
-              docker-image-reference-mithril-aggregator.txt \
-              docker-image-reference-mithril-signer.txt \
-              docker-image-reference-mithril-client-cli.txt
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
       - name: Prepare distribution package
         uses: ./.github/workflows/actions/prepare-distribution
         with:
-          version-name: unstable-${{ steps.slug.outputs.sha8 }}
+          tag: unstable
           download-url-base: ${{ github.server_url }}/${{ github.repository }}/releases/download/unstable
           gpg-secret-key: ${{ secrets.GPG_SECRET_KEY }}
           compatibility-table: '{ "release-mainnet": "⛔", "release-preprod": "⛔", "pre-release-preview": "⛔", "testing-preview": "✔" }'
-          docker-image-references: ${{ steps.build-docker-refs-json.outputs.refs_json }}
 
       - name: Delete unstable release and associated tag
         env:

@@ -5,8 +5,8 @@ description: |
   The artifacts for all supported environments must have been downloaded
   in "package-{EnvName}-x64" subfolders before calling this action.
 inputs:
-  version-name:
-    description: Name of the version to package
+  tag:
+    description: The tag to use for the distribution
     required: true
   download-url-base:
     description: Base url where the released distribution will be downloadable
@@ -17,19 +17,29 @@ inputs:
   compatibility-table:
     description: A json in which each key corresponds to a network and each value describes its compatibility
     required: true
-  docker-image-references:
-    description: JSON mapping project names to full Docker image references
-    required: true
 runs:
   using: "composite"
   steps:
+    - name: Get short SHA
+      id: slug
+      run: echo "sha8=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+    - name: Compute version name
+      id: compute-version-name
+      run: |
+        if [[ "${{ inputs.tag }}" == "unstable" ]]; then
+          echo "version-name=unstable-${{ steps.slug.outputs.sha8 }}" >> $GITHUB_OUTPUT
+        else
+          echo "version-name=${{ inputs.tag }}" >> $GITHUB_OUTPUT
+        fi
+
     - name: Package distribution (Linux-X64)
       shell: bash
       run: |
         python3 ./.github/workflows/scripts/package-distribution.py \
         --input package-Linux-X64/ \
         --dest package/ \
-        --version "${{ inputs.version-name }}" \
+        --version "${{ steps.compute-version-name.outputs.version-name }}" \
         --target "linux-x64"
 
     - name: Package distribution (Linux-ARM64)
@@ -38,7 +48,7 @@ runs:
         python3 ./.github/workflows/scripts/package-distribution.py \
         --input package-Linux-ARM64/ \
         --dest package/ \
-        --version "${{ inputs.version-name }}" \
+        --version "${{ steps.compute-version-name.outputs.version-name }}" \
         --target "linux-arm64"
 
     - name: Package distribution (macOS-ARM64)
@@ -47,7 +57,7 @@ runs:
         python3 ./.github/workflows/scripts/package-distribution.py \
         --input package-macOS-ARM64/ \
         --dest package/ \
-        --version "${{ inputs.version-name }}" \
+        --version "${{ steps.compute-version-name.outputs.version-name }}" \
         --target "macos-arm64"
 
     - name: Package distribution (Windows-X64)
@@ -56,7 +66,7 @@ runs:
         python3 ./.github/workflows/scripts/package-distribution.py \
         --input package-Windows-X64/ \
         --dest package/ \
-        --version "${{ inputs.version-name }}" \
+        --version "${{ steps.compute-version-name.outputs.version-name }}" \
         --target "windows-x64"
 
     - name: Package Explorer
@@ -66,7 +76,7 @@ runs:
         --input package-explorer/ \
         --dest package/ \
         --name "mithril-explorer" \
-        --version "${{ inputs.version-name }}"
+        --version "${{ steps.compute-version-name.outputs.version-name }}"
 
     - name: Prepare crates versions table
       shell: bash
@@ -171,22 +181,19 @@ runs:
     - name: Download a Docker image
       shell: bash
       run: |
+        MITHRIL_IMAGE_ID="${{ steps.compute-version-name.outputs.version-name }}"
+
         cat >> ./release-notes-addon.txt << EOF
 
         ## Download a Docker image
         You can directly pull prebuilt Mithril Docker images:
 
-        | Binary | Image name | URL |
-        | ------ | :--------: | :-: |
+        | Binary             |              Image name              |                             URL                              |
+        | ------------------ | :----------------------------------: | :----------------------------------------------------------: |
+        | mithril-aggregator | mithril-aggregator:$MITHRIL_IMAGE_ID | ghcr.io/input-output-hk/mithril-aggregator:$MITHRIL_IMAGE_ID |
+        | mithril-signer     |   mithril-signer:$MITHRIL_IMAGE_ID   |   ghcr.io/input-output-hk/mithril-signer:$MITHRIL_IMAGE_ID   |
+        | mithril-client     |   mithril-client:$MITHRIL_IMAGE_ID   |   ghcr.io/input-output-hk/mithril-client:$MITHRIL_IMAGE_ID   |
         EOF
-
-        echo '${{ inputs.docker-image-references }}' \
-          | jq -r 'to_entries[] | 
-            "\(.key) \(.value)"' \
-          | while read -r binary ref; do
-              image_name="$(echo "$ref" | awk -F/ '{print $NF}')"
-              echo "| $binary | $image_name | $ref |" >> ./release-notes-addon.txt
-            done
 
     - name: List packaged assets
       shell: bash
